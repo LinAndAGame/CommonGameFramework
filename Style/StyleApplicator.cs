@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using CardMaster.Framework.StateMachine;
+using CommonGameFramework.StateMachine;
+using UnityEngine;
 
-namespace CardMaster.Framework.Style
+namespace CommonGameFramework.Style
 {
     /// <summary>
-    /// 按类型切换样式，内部使用状态机管理当前 Style（可为空）。
+    /// 按类型切换样式；内部用 StateMachine 管理当前 Style，不走 Update / 条件转换。
     /// </summary>
     public class StyleApplicator<T> where T : class
     {
@@ -44,8 +45,21 @@ namespace CardMaster.Framework.Style
 
         public void SwitchStyle(string styleId)
         {
-            if (string.IsNullOrEmpty(styleId) == true || _styleIdMap.TryGetValue(styleId, out var stateType) == false)
+            if (string.IsNullOrEmpty(styleId))
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning("[Style] SwitchStyle：styleId 为空。");
+#endif
                 return;
+            }
+
+            if (_styleIdMap.TryGetValue(styleId, out var stateType) == false)
+            {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                Debug.LogWarning($"[Style] SwitchStyle：未注册的 StyleId「{styleId}」。请先 RegisterStyle。");
+#endif
+                return;
+            }
 
             _stateMachine.ChangeState(stateType);
         }

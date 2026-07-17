@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace CardMaster.Framework.Stat
+namespace CommonGameFramework.Stat
 {
     /// <summary>
     /// 整数属性聚合器：Flat → PercentAdd → PercentMult，全程 int 运算。

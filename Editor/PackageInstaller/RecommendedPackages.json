@@ -1,0 +1,39 @@
+{
+  "packages": [
+    {
+      "displayName": "UniTask",
+      "packageId": "com.cysharp.unitask",
+      "description": "零分配 async/await；框架 Presentation / View 依赖",
+      "gitUrl": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask",
+      "defaultEnabled": true
+    },
+    {
+      "displayName": "VContainer",
+      "packageId": "jp.hadashikick.vcontainer",
+      "description": "轻量 DI 容器",
+      "gitUrl": "https://github.com/hadashiA/VContainer.git?path=VContainer/Assets/VContainer",
+      "defaultEnabled": true
+    },
+    {
+      "displayName": "MessagePipe",
+      "packageId": "com.cysharp.messagepipe",
+      "description": "高性能消息管道（依赖 UniTask）",
+      "gitUrl": "https://github.com/Cysharp/MessagePipe.git?path=src/MessagePipe.Unity/Assets/Plugins/MessagePipe",
+      "defaultEnabled": true
+    },
+    {
+      "displayName": "MessagePipe.VContainer",
+      "packageId": "com.cysharp.messagepipe.vcontainer",
+      "description": "MessagePipe 与 VContainer 集成",
+      "gitUrl": "https://github.com/Cysharp/MessagePipe.git?path=src/MessagePipe.Unity/Assets/Plugins/MessagePipe.VContainer",
+      "defaultEnabled": true
+    },
+    {
+      "displayName": "Unity Localization",
+      "packageId": "com.unity.localization",
+      "description": "官方本地化（注册表版本，无 gitUrl）",
+      "gitUrl": "",
+      "defaultEnabled": false
+    }
+  ]
+}

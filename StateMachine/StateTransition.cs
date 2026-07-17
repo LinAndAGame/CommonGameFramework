@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace CardMaster.Framework.StateMachine
+namespace CommonGameFramework.StateMachine
 {
     /// <summary>
     /// 供 StateMachine.Update 迭代转换，不暴露裸 Type 构造入口。

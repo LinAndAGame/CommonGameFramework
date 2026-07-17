@@ -1,9 +1,9 @@
-﻿using CardMaster.Framework.StateMachine;
+﻿using CommonGameFramework.StateMachine;
 
-namespace CardMaster.Framework.Style
+namespace CommonGameFramework.Style
 {
     /// <summary>
-    /// 样式基类，通过状态机 OnEnter/OnExit 控制样式生命周期。
+    /// 样式基类；仅用 OnEnter/OnExit 切换外观。StyleApplicator 不调用 OnUpdate / Transition。
     /// </summary>
     public abstract class BaseStyle<T> : IState<T> where T : class
     {
@@ -11,6 +11,8 @@ namespace CardMaster.Framework.Style
 
         public virtual void OnEnter(T content) { }
         public virtual void OnExit(T content) { }
+
+        /// <summary>StyleApplicator 不调用；仅直连 StateMachine.Update 时需要 override。</summary>
         public virtual void OnUpdate(T content) { }
     }
 }

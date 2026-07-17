@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace CardMaster.Framework.StateMachine
+namespace CommonGameFramework.StateMachine
 {
     /// <summary>
-    /// 轻量级有限状态机，绑定唯一操作对象，支持注册状态与条件转换。
+    /// 轻量级有限状态机，绑定唯一操作对象。
+    /// ChangeState / RegisterState 为常用入口；AddTransition + Update 为可选进阶 API（条件自动跳转）。
     /// </summary>
     public class StateMachine<TContent, TState>
         where TContent : class
@@ -29,6 +30,7 @@ namespace CardMaster.Framework.StateMachine
             _states[typeof(T)] = state;
         }
 
+        /// <summary>可选进阶：注册 From→To 条件转换，需配合 Update 驱动。</summary>
         public void AddTransition<TFrom, TTo>(Func<TContent, bool> condition = null)
             where TFrom : class, TState
             where TTo : class, TState
@@ -60,6 +62,10 @@ namespace CardMaster.Framework.StateMachine
             CurrentState.OnEnter(Content);
         }
 
+        /// <summary>
+        /// 可选进阶：推进 OnUpdate，并按 AddTransition 条件自动跳转。
+        /// 同帧多条 transition 均匹配时，只执行列表中第一条。
+        /// </summary>
         public void Update()
         {
             CurrentState?.OnUpdate(Content);

@@ -2,49 +2,24 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace CardMaster.Framework.Res
+namespace CommonGameFramework.Res
 {
     /// <summary>
-    /// Resources 加载门面，提供同步与异步加载。
+    /// 资源加载静态门面：调用方只碰本类；实现经 IResourceLoader（见 Loader/）。
     /// </summary>
     public static class Res
     {
-        /// <summary>同步加载 Resources 资源。</summary>
-        public static T Load<T>(string path) where T : Object
+        static IResourceLoader _loader = new ResourcesResourceLoader();
+
+        /// <summary>当前 loader adapter；测试或换后端时替换。</summary>
+        public static IResourceLoader Loader
         {
-            if (string.IsNullOrEmpty(path))
-            {
-                Debug.LogError("[Res] 资源路径为空。");
-                return null;
-            }
-
-            var asset = Resources.Load<T>(path);
-            if (asset == null)
-            {
-                Debug.LogWarning($"[Res] 未找到资源：{path}（{typeof(T).Name}）");
-            }
-
-            return asset;
+            get => _loader;
+            set => _loader = value ?? new ResourcesResourceLoader();
         }
 
-        /// <summary>异步加载 Resources 资源。</summary>
-        public static async UniTask<T> LoadAsync<T>(string path) where T : Object
-        {
-            if (string.IsNullOrEmpty(path))
-            {
-                Debug.LogError("[Res] 资源路径为空。");
-                return null;
-            }
+        public static T Load<T>(string path) where T : Object => _loader.Load<T>(path);
 
-            var request = Resources.LoadAsync<T>(path);
-            await request;
-            var asset = request.asset as T;
-            if (asset == null)
-            {
-                Debug.LogWarning($"[Res] 未找到资源：{path}（{typeof(T).Name}）");
-            }
-
-            return asset;
-        }
+        public static UniTask<T> LoadAsync<T>(string path) where T : Object => _loader.LoadAsync<T>(path);
     }
 }

@@ -1,0 +1,69 @@
+---
+description: Unity 个人框架——UI Panel/Container、生命周期、事件、禁止运行时拼节点
+alwaysApply: true
+---
+
+# Unity 个人框架规范（全局）
+
+编写或修改 Unity C#（UI、Framework、Game 系统）时必须遵守。缺失 Scene/Prefab 配置时**不得**用代码兜底；在回复末尾用**红色字**列出需在 Editor 手动完成的项。
+
+## 通用编码
+
+- 变量用 `[SerializeField] private`；Init 缓存引用，禁止在 Update 中 GetComponent。
+- 注释用中文；只展示修改片段，禁止输出整文件重复代码。
+- 非必要不新建脚本；优先改现有逻辑。
+- **禁止**直接编辑 `.unity` / `.prefab` 文件。
+
+## 禁止运行时创建结构
+
+- **Game / UI 层禁止** `AddComponent<T>()`、`new GameObject(...)`、用 `Instantiate` 临时拼 UI。
+- **允许** `GetComponent` / `TryGetComponent`；对象池 `Pool.Get` / `MonoPool` 获取**已在 Prefab 配齐组件**的 `Container_*`。
+- **Framework 底层例外**：若模块运行时需要 MonoBehaviour，在**首次使用时**自行创建物体并挂载；物体名必须用 `[]` 包裹模块名（如 `[Clock]`、`[PoolRoot]`），子节点用 `[模块]_具体名`。详见 `framework-design.mdc`。Game/UI 层不得复制该模式。
+
+## UI 层级：Panel / Container
+
+| 类型 | 场景命名 | 基类 | 用途 |
+|------|----------|------|------|
+| 界面 | `Panel_*` | `BasePanel` | 任意 UI 界面，含大界面下子界面（如 `Panel_Top/Panel_Time`） |
+| 可复用 | `Container_*` | `BaseContainer` | 仅对象池/列表项等会多次实例化的 Prefab |
+
+- `UICtrl` 只绑定顶层 `Panel_*`；子 Panel 由父 Panel 在 `Init()` 内 `BindChildPanel<T>()` 绑定并持有字段。
+- `BindPanel` / `BindChildPanel` / `BindChildContainer` 只能 `GetComponent`；缺失时 `Debug.LogError`。
+- 禁止在 `UICtrl` 或外部脚本替 Panel/Container 注册事件。
+
+## 生命周期三件套
+
+Panel / Container 脚本必须有：
+
+| 方法 | 职责 |
+|------|------|
+| `Init()` | 缓存引用、**注册事件** |
+| `Refresh(...)` | 对外刷新，**统一命名 Refresh**，参数按类定义；禁止 `virtual Refresh()`、禁止 `SetXxx` / `RefreshXxx` |
+| `OnDestroy()` | 对称注销事件；子类写 `protected override void OnPanelDestroy()`，禁止再写 Unity `OnDestroy()` |
+
+- 内部 DOM 更新用 `private void ApplyView()`。
+- 父 Panel 在 `Refresh(...)` 内逐个调用 `_child?.Refresh(...)`，禁止无参批量刷新。
+- 父 Panel 在 `Init()` / `OnDestroy()` 时，须对该类字段持有的**全部**子 Panel 同步触发生命周期（与 `Refresh` 逐个子 Panel 传递一致）：
+  - `Init()`：每个子 Panel 必须通过 `BindChildPanel<T>()` 绑定（内部会调用子 Panel 的 `Initialize` → `Init()`）；禁止遗漏任一子 Panel 字段，禁止在 `Init()` 外单独初始化子 Panel。
+  - `OnDestroy()`：`BasePanel` 统一调度，先逆序销毁全部 `BindChildPanel` 子 Panel，再调子类 `OnPanelDestroy()`；子 Panel 的事件/监听注销写在各自 `OnPanelDestroy()` 中。
+- 继承基类时对外入口为 `Initialize(UICtrl)`，内部调 `Init()`。
+- Panel / Container 场景内常默认**非激活**；非激活节点**不会**触发 Unity `Awake()`。
+- **禁止**在 `BasePanel` / `BaseContainer` 或子类中用 `Awake()` 做初始化；`RectTransform` 缓存、引用绑定、事件注册等**全部**放在 `Initialize(UICtrl)` → `Init()` 中。
+- `UICtrl.BindScene` / `BindChildPanel` / `BindChildContainer` 会显式调用 `Initialize`，保证非激活 Panel 也能正确初始化。
+
+## 事件注册
+
+- 订阅/注销必须在**类内部**成对完成（Init/OnDestroy 或 OnEnable/OnDisable）。
+- 禁止外部替该类 `+=` / `-=` 或绑 `Button.onClick`。
+- 无法在类内实现时，回复末尾红色字说明原因并请用户确认。
+
+## 场景 Icon 与资源
+
+- 场景固定 UI 的 Icon 在 Inspector 挂好；**禁止**代码给 `Image.sprite` 赋值或 `UiIconLoader.ApplyIcon`。
+- 仅运行时池化 Container、数据驱动 Icon 可在 `Refresh` 中动态加载。
+- 资源加载统一走 `Framework.Res.Res`，禁止直接 `Resources.Load`。
+
+## 回复格式（Scene/Prefab 缺失时）
+
+<span style="color:red">**请在 Unity 中手动操作**</span>  
+<span style="color:red">1. 给 `Panel_Game/Panel_Map` 挂载 `PanelMap` 组件</span>

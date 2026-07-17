@@ -1,4 +1,4 @@
-namespace CardMaster.Framework.Stat
+namespace CommonGameFramework.Stat
 {
     /// <summary>
     /// 整数属性，默认使用 <see cref="IntStatAggregator"/>，可注入自定义聚合器。

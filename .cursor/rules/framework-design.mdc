@@ -1,0 +1,115 @@
+---
+description: 框架层通用设计原则——低耦合、可扩展、禁止业务 Enum 预设
+alwaysApply: true
+---
+
+# 框架层设计原则（全局）
+
+编写或修改 **Framework / 可复用库** 代码（如 `CardMaster.Framework`、`* .Framework` 程序集）时必须遵守。游戏项目（Game 层）负责具体业务类型与系统间装配。
+
+## 通用且易扩展
+
+- 框架只提供**机制**（接口、抽象基类、调度器、容器），不提供**业务语义**（Battle、Coin、Card 等）。
+- 对外 API 追求**深模块**：小接口、大实现；新增能力优先扩展子类/实现类，而非改框架核心。
+- 框架模块之间**禁止**直接引用彼此的具体实现类；仅通过接口或上层注入协作。
+
+## 低耦合：装配在游戏层
+
+- Stat、Command、Presentation、View、Pool 等系统**互不依赖**游戏领域类型。
+- `CommandContext.Source/Target` 等扩展点保持 `object` 或泛型上下文，由**游戏项目在启动/战斗初始化时**注入具体类型。
+- 跨系统联动（如「扣血 Command → 飘字 Action」）在**游戏层编排**（BattleManager、Scheduler 调用方），不在框架内写死。
+
+## 禁止框架层 Enum 预设业务通道/类型
+
+- **禁止**在框架中用 `enum` 预设并行队列 Channel、战斗阶段、伤害类型、UI 槽位等**游戏语义**。
+- **应**提供抽象基类或标记接口，由游戏项目派生并持有单例/注册实例。
+
+```csharp
+// ✅ 框架：空语义基类 + 按实例路由
+public abstract class PresentationChannel { }
+
+public sealed class ActionBus
+{
+    public void Post(PresentationChannel channel, IPresentationAction action) { /* ... */ }
+}
+
+// ✅ 游戏项目：具体 Channel
+public sealed class BattlePresentationChannel : PresentationChannel
+{
+    public static BattlePresentationChannel Default { get; } = new();
+}
+```
+
+```csharp
+// ❌ 框架：业务 Enum
+public enum ActionChannel { Battle, UI, Overlay }
+```
+
+- 若框架需要默认行为，提供 **`DefaultPresentationChannel`** 单一默认实例即可；多 Channel 并行由游戏层定义多个子类。
+
+## Logic / Presentation 分离（回合制动效）
+
+- **Logic**（`IGameCommand`）：同步改状态，不含 `await`。
+- **Presentation**（`IPresentationAction`）：异步 UniTask 播动效；不改权威状态。
+- 框架提供 `ActionScheduler` + `ActionBus`；具体 Action、Channel 子类在游戏项目实现。
+
+## 模块子目录划分（按功能归类）
+
+同一模块文件夹下，**禁止**把不同职责的脚本全部平铺在根目录。应按**功能职责**建子文件夹归类；文件 ≥ 约 4～5 个、或出现第二类职责时即应拆分。
+
+- **命名空间**保持 `CommonGameFramework.{Module}`（或模块约定命名空间），**不随**子目录层级变化。
+- **子文件夹名必须描述里面文件的功能**（职责名词）：如 `Core/`、`Local/`、`Platform/`、`Duration/`、`Merge/`、`Factory/`、`Actions/`、`Steps/`。
+- **同一功能下的接口与实现放在同一子文件夹**（如 `IAchievementPlatform` 与 `CompositeAchievementPlatform` 同属 `Platform/`；`IBuffContainer` 与 `BuffContainer` 同属 `Core/`）。禁止把接口留在模块根、实现塞进子目录。
+- 模块根**仅留**对外门面/编排入口（如 `AchievementService`、`ActionScheduler`）；其余按功能进子目录。
+- 无法归入明确功能时，可用杂项目录，但**全项目统一一种名字**（推荐 `Utils/`；`Misc/`、`Helper/` / `Helpers/` 亦可，选定后不要混用）。
+- **禁止**用看不出职责、又非统一杂项约定的随意名（如 `BuiltIn/`、`Impl/`、`Stuff/`）。
+
+```
+# ✅ 接口与实现同目录；根目录仅门面
+Achievement/
+  AchievementService.cs
+  Core/           # AchievementId、AchievementDefinition
+  Local/          # IAchievementLocal、InMemory、PlayerPrefs
+  Platform/       # IAchievementPlatform、Composite
+
+# ❌ 接口在根、实现在子文件夹
+Achievement/
+  IAchievementPlatform.cs
+  Platform/CompositeAchievementPlatform.cs
+```
+
+### Buff 目录约定（参考模板）
+
+| 子目录 | 职责 | 典型文件 |
+|--------|------|----------|
+| `Core/` | 定义、实例、容器 | `BaseBuff`、`BuffInstance`、`IBuffContainer`、`BuffContainer` |
+| `Duration/` | 持续时间策略 | `IExpirable`、`RealtimeDuration`、`TurnDuration` |
+| `Merge/` | 同 ID 合并策略 | `MergeResult`、`BuffMergePolicy` |
+| `Factory/` | 注册/创建 seam | `IBuffRegistry`、`BuffRegistry` |
+
+- 新增类型放入对应子目录；游戏层具体派生类放在 Game 项目。
+
+## 与 UI 框架规范的关系
+
+- 本规则管 **Framework 程序集** 架构；Panel/Container 生命周期等见 `unity-framework.mdc`。
+- 两者同时生效：Framework 不写 Panel 业务，Game/UI 层不复制 Pool / Clock 等基础设施创建模式。
+
+## 框架运行时物体（需挂载组件时）
+
+Framework 底层若必须依赖 `MonoBehaviour`（如每帧 Tick、对象池根节点）：
+
+- **允许**在**首次使用时** `new GameObject` + `AddComponent`（或确保已有组件）。
+- 物体命名：用 **`[]` 包裹功能模块名**，便于 Hierarchy 识别。
+  - 根节点示例：`[Clock]`、`[PoolRoot]`
+  - 子节点示例：`[Pool]_EnemyHit`（`[模块]_具体名`）
+- `DontDestroyOnLoad` 仅用于跨场景基础设施根节点。
+- **禁止** Game / UI 层复制此模式；业务界面仍须 Scene/Prefab 预配置。
+
+```csharp
+// ✅ 框架：首次使用时创建并挂载
+var go = new GameObject("[Clock]");
+Object.DontDestroyOnLoad(go);
+go.AddComponent<ClockDriver>();
+
+// ❌ 业务 UI / Panel 运行时 new GameObject + AddComponent
+```

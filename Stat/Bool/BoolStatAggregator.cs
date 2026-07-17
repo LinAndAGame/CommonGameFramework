@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 
-namespace CardMaster.Framework.Stat
+namespace CommonGameFramework.Stat
 {
     /// <summary>
-    /// 布尔属性聚合器，按来源覆盖；任一来源强制 true 则结果为 true。
+    /// 布尔属性聚合器：任一来源强制 true 则结果为 true，否则使用 BaseValue。
     /// </summary>
     public class BoolStatAggregator : IStatAggregator<bool, IStatModifier<bool>>
     {
@@ -70,22 +70,17 @@ namespace CardMaster.Framework.Stat
 
         protected virtual void Recalculate()
         {
-            if (_overrides.Count == 0)
-            {
-                CachedValue = _baseValue;
-                return;
-            }
-
+            // 任一来源强制 true → true；否则回落 BaseValue（false 覆盖不压掉 true 基底）
             foreach (var forced in _overrides.Values)
             {
-                if (forced == true)
+                if (forced)
                 {
                     CachedValue = true;
                     return;
                 }
             }
 
-            CachedValue = false;
+            CachedValue = _baseValue;
         }
 
         protected bool CachedValue

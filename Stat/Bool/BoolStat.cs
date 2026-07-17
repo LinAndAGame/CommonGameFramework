@@ -1,4 +1,4 @@
-namespace CardMaster.Framework.Stat
+namespace CommonGameFramework.Stat
 {
     /// <summary>
     /// 布尔属性，默认使用 <see cref="BoolStatAggregator"/>，可注入自定义聚合器。
