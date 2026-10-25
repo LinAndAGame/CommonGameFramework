@@ -1,0 +1,26 @@
+---
+description: Unity 组件/脚本单一职责（SRP）——输入、动画、移动、数据分离
+alwaysApply: true
+---
+
+# 组件 / 脚本单一职责（SRP）
+
+一个脚本只控制一种逻辑；组件之间功能单一，通过引用或数据协作。
+
+## 必须
+
+- 角色相关能力按职责拆分，例如：`PlayerInput`（输入）、`PlayerMotor`（移动）、`PlayerAnimatorController`（动画）、属性数据（Hp / MoveSpeed / AttackPower 等）各自独立。
+- 新增能力优先**新建脚本**，禁止往现有“大杂烩”脚本堆逻辑。
+- 脚本之间用 `[SerializeField]` 引用或只读状态（如输入快照、Motor 状态）通信；禁止互相代绑事件。
+
+## 禁止
+
+- 同一 MonoBehaviour 同时负责输入读取 + 物理移动 + Animator 参数驱动。
+- 在动画脚本里写 CharacterController 位移，或在输入脚本里直接改 Animator。
+
+## 示例
+
+```csharp
+// ❌ BAD：一个类里读 Rewired、Move、SetAnimator
+// ✅ GOOD：PlayerInput → PlayerMotor → PlayerAnimatorController
+```

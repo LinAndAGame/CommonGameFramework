@@ -15,43 +15,38 @@ alwaysApply: true
 
 ## 低耦合：装配在游戏层
 
-- Stat、Command、Presentation、View、Pool 等系统**互不依赖**游戏领域类型。
+- Stat、Command、View、Pool 等系统**互不依赖**游戏领域类型。
 - `CommandContext.Source/Target` 等扩展点保持 `object` 或泛型上下文，由**游戏项目在启动/战斗初始化时**注入具体类型。
-- 跨系统联动（如「扣血 Command → 飘字 Action」）在**游戏层编排**（BattleManager、Scheduler 调用方），不在框架内写死。
+- 跨系统联动（如「扣血 Command → 飘字」）在**游戏层编排**（Director 用 UniTask 连接），不在框架内写死。
 
 ## 禁止框架层 Enum 预设业务通道/类型
 
-- **禁止**在框架中用 `enum` 预设并行队列 Channel、战斗阶段、伤害类型、UI 槽位等**游戏语义**。
+- **禁止**在框架中用 `enum` 预设战斗阶段、伤害类型、UI 槽位等**游戏语义**。
 - **应**提供抽象基类或标记接口，由游戏项目派生并持有单例/注册实例。
 
 ```csharp
 // ✅ 框架：空语义基类 + 按实例路由
-public abstract class PresentationChannel { }
+public abstract class ViewLayer { }
 
-public sealed class ActionBus
+// ✅ 游戏项目：具体层
+public sealed class MainViewLayer : ViewLayer
 {
-    public void Post(PresentationChannel channel, IPresentationAction action) { /* ... */ }
-}
-
-// ✅ 游戏项目：具体 Channel
-public sealed class BattlePresentationChannel : PresentationChannel
-{
-    public static BattlePresentationChannel Default { get; } = new();
+    public static MainViewLayer Instance { get; } = new();
 }
 ```
 
 ```csharp
 // ❌ 框架：业务 Enum
-public enum ActionChannel { Battle, UI, Overlay }
+public enum UILayer { Main, Overlay, Popup }
 ```
 
-- 若框架需要默认行为，提供 **`DefaultPresentationChannel`** 单一默认实例即可；多 Channel 并行由游戏层定义多个子类。
+- 若框架需要默认行为，提供 **`DefaultViewLayer`** 单一默认实例即可；多层由游戏层定义多个子类。
 
 ## Logic / Presentation 分离（回合制动效）
 
 - **Logic**（`IGameCommand`）：同步改状态，不含 `await`。
-- **Presentation**（`IPresentationAction`）：异步 UniTask 播动效；不改权威状态。
-- 框架提供 `ActionScheduler` + `ActionBus`；具体 Action、Channel 子类在游戏项目实现。
+- **Presentation**：游戏层用 UniTask 方法播动效（`await` / `WhenAll`）；不改权威状态；只读已结算结果。
+- 框架不提供 ActionScheduler / IPresentationAction / PresentationChannel。
 
 ## 模块子目录划分（按功能归类）
 
@@ -60,7 +55,7 @@ public enum ActionChannel { Battle, UI, Overlay }
 - **命名空间**保持 `CommonGameFramework.{Module}`（或模块约定命名空间），**不随**子目录层级变化。
 - **子文件夹名必须描述里面文件的功能**（职责名词）：如 `Core/`、`Local/`、`Platform/`、`Duration/`、`Merge/`、`Factory/`、`Actions/`、`Steps/`。
 - **同一功能下的接口与实现放在同一子文件夹**（如 `IAchievementPlatform` 与 `CompositeAchievementPlatform` 同属 `Platform/`；`IBuffContainer` 与 `BuffContainer` 同属 `Core/`）。禁止把接口留在模块根、实现塞进子目录。
-- 模块根**仅留**对外门面/编排入口（如 `AchievementService`、`ActionScheduler`）；其余按功能进子目录。
+- 模块根**仅留**对外门面/编排入口（如 `AchievementService`、`ViewFlowController`）；其余按功能进子目录。
 - 无法归入明确功能时，可用杂项目录，但**全项目统一一种名字**（推荐 `Utils/`；`Misc/`、`Helper/` / `Helpers/` 亦可，选定后不要混用）。
 - **禁止**用看不出职责、又非统一杂项约定的随意名（如 `BuiltIn/`、`Impl/`、`Stuff/`）。
 

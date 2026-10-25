@@ -1,24 +1,12 @@
 # CommonGameFramework
 
-通用 Unity 游戏框架库：提供对象池、资源加载、逻辑 Command、表现队列、Buff/Stat、时钟/随机/音频/冷却、视图流程等**机制**；卡牌战斗、UI 层级、Channel 分区等**语义**由游戏项目扩展。存档用游戏层 EasySave，文案用 Unity Localization；Event 总线暂缓。
+通用 Unity 游戏框架库：提供对象池、资源加载、逻辑 Command、Buff/Stat、时钟/随机/音频/冷却、视图流程等**机制**；卡牌战斗、UI 层级等**语义**由游戏项目扩展。存档用游戏层 EasySave，文案用 Unity Localization；Event 总线暂缓。
 
 ## Language
 
 **Logic Command**:
 同步执行的逻辑动作，通过 `IGameCommand` 修改权威游戏状态。
-_Avoid_: Action（与 Presentation Action 混淆）
-
-**Presentation Action**:
-异步表现动作，通过 `IPresentationAction` 播放动效；不持有权威状态。
-_Avoid_: AnimationCommand, VFXCommand
-
-**PresentationChannel**:
-表现并行车道的标识；框架提供抽象基类，游戏项目派生子类并按实例路由。
-_Avoid_: ActionChannel enum, Layer enum
-
-**ActionScheduler**:
-表现主序列编排入口；根目录门面。`ActionBus` / `IScheduleStep` / 内置 Action 分属 `Core/`、`Steps/`、`Actions/`。
-_Avoid_: 游戏层直接拼 ActionQueue；BuiltIn 笼统目录名
+_Avoid_: 把异步动效写成 Command
 
 **ViewLayer**:
 视图栈与 Canvas 挂载层的标识；框架提供抽象基类，游戏项目派生子类并注册 Canvas。
@@ -28,13 +16,17 @@ _Avoid_: UILayer enum
 视图编排入口：Open 入栈，Hide 出栈并恢复下层；日常只用 OpenAsync / HideAsync。
 _Avoid_: 绕过 Flow 直接改 ViewStackManager；Hide 只藏不 Pop
 
+**MvcScope**：
+实例级 MVC 装配入口；登记外部模型并拥有控制器生命周期，初始化失败自动清理、退出逆序释放。
+_Avoid_: 全局静态模型仓库；框架预设业务 Model；作用域销毁注入的 View/Model
+
+**MvcModel / IMvcView / MvcController**：
+模型同步结算后发布只读快照，视图通过 Refresh 消费快照，控制器订阅交互意图及模型变化并成对注销。
+_Avoid_: View 修改权威状态；Controller 代绑按钮；Model 等待动画或依赖具体 View
+
 **CommandContext**:
 逻辑 Command 的运行上下文；仅含 Source/Target 与 lazy-create 的 services bag。
 _Avoid_: 在框架层挂载 BuffContainer、FloatStat 等具体类型
-
-**Schedule Step**:
-主序列调度单元，编排 Logic 与 Presentation 的执行顺序。
-_Avoid_: GameAction, AbstractGameAction；子命名空间 Presentation.Steps
 
 **Services Bag**:
 CommandContext 内按类型 lazy 注册/获取的服务容器；游戏层注入 Buff、Hp 等。
@@ -65,7 +57,7 @@ _Avoid_: GameStat、StatModifier、非泛型 IStatModifier 别名
 _Avoid_: 绕过 Stat 直接 cast 具体 Aggregator 才能清修正
 
 **Pool**:
-对象池静态门面；实现经 `IPoolRegistry`（`Registry/`）→ `Internal/` 池。
+对象池静态门面；实现经 `IPoolRegistry`（`Registry/`）→ `Pools/` 具体池。
 _Avoid_: 游戏层直接依赖 ClassPool / MonoPool
 
 **Res**:

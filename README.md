@@ -1,23 +1,23 @@
 # CommonGameFramework
 
-通用 Unity 游戏框架库（`CommonGameFramework` 程序集）。领域术语见 [CONTEXT.md](CONTEXT.md)。
+通用 Unity 游戏框架库（`CommonGameFramework` 程序集）。AI 入口见 [AGENTS.md](AGENTS.md)；术语见 [CONTEXT.md](CONTEXT.md)。
 
 ## 模块概览
 
 | 模块 | 职责 | 目录要点 |
 |------|------|----------|
-| `Pool` | 对象池；`IPoolRegistry` + 静态 `Pool` 门面 | 根 `Pool`；`Registry/`；`Core/`；`Internal/` |
+| `Pool` | 对象池；`IPoolRegistry` + 静态 `Pool` 门面 | 根 `Pool`；`Registry/`；`Core/`；`Pools/` |
 | `Res` | 资源加载；`IResourceLoader` + 静态 `Res` 门面 | 根 `Res`；`Loader/` |
-| `Time` | 游戏时钟；Pause / TimeScale | 根 `Clock`；`Core/`（含 `ClockDriver`） |
-| `Random` | 可种子随机 | 根 `Rng`；`Core/` |
+| `Clock` | 游戏时钟；Pause / TimeScale | 根 `Clock`；`Core/`（含 `ClockDriver`） |
+| `Rng` | 可种子随机 | 根 `Rng`；`Core/` |
 | `Audio` | 音效 / BGM | 根 `Audio`；`Core/` |
 | `Cooldown` | 冷却计时 | 根 `CooldownTracker`；`Core/` |
 | `Command` | 同步 Logic Command；services bag | 三文件，无子目录 |
-| `Presentation` | 回合制动效队列 | 根 `ActionScheduler`；`Core/`；`Bus/`；`Actions/`；`Steps/` |
 | `Buff` | Buff 容器 / 注册 / 时长 / 合并 | `Core/`；`Duration/`；`Merge/`；`Factory/` |
 | `Stat` | 属性聚合 | `Core/`；`Float/`；`Int/`；`Bool/` |
 | `Achievement` | 本地权威 + 可选平台 | 根 `AchievementService`；`Core/`；`Local/`；`Platform/` |
 | `View` | BaseView 异步 Open/Hide | 根 `ViewFlowController`；`Core/`；`Stack/`；`Canvas/` |
+| `MVC` | 模型快照、视图刷新、控制器生命周期 | 根 `MvcScope`；`Model/`；`View/`；`Controller/` |
 | `StateMachine` | 通用 FSM | 扁平 |
 | `Style` | 样式切换 | 扁平 |
 | `Extensions` | C# / Unity API 扩展方法 | `System/`；`Unity/` |
@@ -39,47 +39,9 @@ var hp = context.GetService<FloatStat>();
 childCommand.Execute(context); // 嵌套子 Command 直接 Execute
 ```
 
-## Presentation 动效队列
+## 表现编排
 
-### 三层职责
-
-| 层 | 类型 | 说明 |
-|----|------|------|
-| 编排 | `ActionScheduler` + `IScheduleStep` | 主序列串行 |
-| 逻辑 | `IGameCommand` | 同步改状态 |
-| 表现 | `IPresentationAction` | 异步 UniTask 播动效 |
-
-### PresentationChannel（游戏层扩展）
-
-```csharp
-public sealed class BattlePresentationChannel : PresentationChannel
-{
-    public static BattlePresentationChannel Default { get; } = new();
-}
-```
-
-无并行需求时用 `DefaultPresentationChannel.Instance`。
-
-### 典型用法
-
-```csharp
-var ctx = new CommandContext { Source = player, Target = enemy };
-ctx.SetService(enemyHp);
-ctx.SetService(buffContainer);
-
-await new ActionScheduler()
-    .Clear()
-    .EnqueueLogic(new DealDamageCommand(12))
-    .EnqueueParallel(
-        (BattlePresentationChannel.Default, new HitFlashAction(enemy)),
-        (UiPresentationChannel.Default,     new HpBarShakeAction(enemy)))
-    .EnqueuePresentation(UiPresentationChannel.Default, new DamageNumberAction(12, enemy))
-    .RunAsync(new PresentationContext(ctx));
-```
-
-`EnqueueGroup` 内部转为 `SerialGroupStep`，与 `EnqueueStep(new SerialGroupStep(...))` 语义一致。
-
-`Cancel()` 或 `RunAsync` 被 token 取消时会**清空**未执行主序列，不会从断点续跑。`IsBusy == true` 时游戏层应锁定输入。
+框架不提供动效队列。游戏层 Director 在 Logic 结算后直接 `await` / `UniTask.WhenAll`；取消用 `CancellationToken`。
 
 ## View（游戏层扩展）
 

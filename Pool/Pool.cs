@@ -4,7 +4,7 @@ using UnityEngine;
 namespace CommonGameFramework.Pool
 {
     /// <summary>
-    /// 全局静态对象池门面：调用方只碰本类；实现经 IPoolRegistry → Internal 池。
+        /// 全局静态对象池门面：调用方只碰本类；实现经 IPoolRegistry → Pools/ 具体池。
     /// </summary>
     public static class Pool
     {

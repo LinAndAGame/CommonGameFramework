@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using CommonGameFramework.Rng;
 
 namespace CommonGameFramework.Extensions
 {
@@ -16,10 +17,10 @@ namespace CommonGameFramework.Extensions
         }
 
         /// <summary>Fisher–Yates 洗牌；random 为 null 时用 Rng.Current。</summary>
-        public static void Shuffle<T>(this IList<T> list, Random.IRandom random = null)
+        public static void Shuffle<T>(this IList<T> list, IRandom random = null)
         {
             if (list == null) throw new ArgumentNullException(nameof(list));
-            random ??= Random.Rng.Current;
+            random ??= Rng.Current;
 
             for (var i = list.Count - 1; i > 0; i--)
             {
@@ -28,10 +29,10 @@ namespace CommonGameFramework.Extensions
             }
         }
 
-        public static T GetRandomOrDefault<T>(this IList<T> list, Random.IRandom random = null)
+        public static T GetRandomOrDefault<T>(this IList<T> list, IRandom random = null)
         {
             if (list == null || list.Count == 0) return default;
-            random ??= Random.Rng.Current;
+            random ??= Rng.Current;
             return list[random.Range(0, list.Count)];
         }
     }

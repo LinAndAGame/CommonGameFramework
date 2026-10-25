@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using CommonGameFramework.Random;
+using CommonGameFramework.Rng;
 
 namespace CommonGameFramework.Utils
 {
