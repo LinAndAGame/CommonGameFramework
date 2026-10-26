@@ -16,6 +16,7 @@ namespace CommonGameFramework.DragPlace {
         bool _stopping;
         int _currentDragId;
 
+        // 记下控制器和登记表，并准备命中检测。
         public CurrentDrag(DragController controller, DragRegistry registry) {
             _controller = controller;
             _registry = registry;
@@ -101,11 +102,13 @@ namespace CommonGameFramework.DragPlace {
             DragPlace place = _hitTester.Find(source, eventData, true);
             DragEventArgs args = CreateArgs(source, place, eventData);
             if (place != null && _controller.EvaluateCanPlace(source, place) == true) {
+                // 同组且能接受，按成功落地。
                 Succeed(source, place, args);
-                return;
             }
-
-            Fail(source, place, eventData, args);
+            else {
+                // 放不下去就派发失败并回源。
+                Fail(source, place, eventData, args);
+            }
         }
 
         // 放置点被移出时，若它正被悬停则派发离开。
@@ -151,6 +154,7 @@ namespace CommonGameFramework.DragPlace {
             }
         }
 
+        // 回源未完成、源被关掉或不在登记表里时不能开始。
         bool CanBegin(DragSource source) {
             if (_controller.AllowsDrag() == false) {
                 return false;
@@ -175,6 +179,7 @@ namespace CommonGameFramework.DragPlace {
             return true;
         }
 
+        // 成功落地后清掉当前拖拽，再派发成功。
         void Succeed(DragSource source, DragPlace place, DragEventArgs args) {
             _currentDragId++;
             _visual.ApplySuccess(source, place, _controller.EffectiveSettings);
@@ -185,6 +190,7 @@ namespace CommonGameFramework.DragPlace {
             source.RebindIfPlaying();
         }
 
+        // 派发失败。回调没有打断时再播回源。
         void Fail(DragSource source, DragPlace place, PointerEventData eventData, DragEventArgs args) {
             DragPlace rejected = place != null ? place : _hover;
             if (_hover != null && _hover != place) {
@@ -229,6 +235,7 @@ namespace CommonGameFramework.DragPlace {
             }
         }
 
+        // 清掉当前拖拽，并放开源上的改父锁。
         void ClearDrag() {
             DragSource source = _dragging;
             _dragging = null;
@@ -240,12 +247,15 @@ namespace CommonGameFramework.DragPlace {
             }
         }
 
+        // 组装回调载荷。组优先用登记表里的值。
         DragEventArgs CreateArgs(DragSource source, DragPlace place, PointerEventData pointer) {
             string groupId = string.Empty;
             if (source != null && _registry.TryGetSourceGroup(source, out string registered) == true) {
+                // 用登记时记下的组。
                 groupId = registered;
             }
             else if (source != null) {
+                // 还没登记时用源上当前的组。
                 groupId = source.GroupId;
             }
 

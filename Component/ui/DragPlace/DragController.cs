@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Sirenix.OdinInspector;
 using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
 namespace CommonGameFramework.DragPlace {
     /// <summary>
@@ -14,11 +13,6 @@ namespace CommonGameFramework.DragPlace {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]
     public sealed class DragController : MonoBehaviour {
-        static readonly List<DragController> Active = new List<DragController>();
-        static readonly Dictionary<int, DragController> ByCanvas = new Dictionary<int, DragController>();
-        static bool _creating;
-        static bool _suspendAutoCreate;
-
         [FoldoutGroup("拖拽")]
         [LabelText("启用拖拽")]
         [SerializeField]
@@ -67,42 +61,11 @@ namespace CommonGameFramework.DragPlace {
 
         public event Action<DragEventArgs> DragFailed;
 
-        internal DragSettings EffectiveSettings => DragSettings.Resolve(_settings);
+        // 未指定资产时用运行时默认配置。
+        internal DragSettings EffectiveSettings => DragSettingsRuntime.Resolve(_settings);
 
-        // 按组件上的引用、父节点、Canvas 或场景里唯一控制器解析。
-        public static DragController Resolve(Component member, DragController assigned) {
-            if (assigned != null) {
-                return assigned;
-            }
-
-            if (member == null) {
-                return null;
-            }
-
-            DragController parent = FindInParents(member);
-            if (parent != null) {
-                return parent;
-            }
-
-            Canvas canvas = FindCanvas(member);
-            if (canvas != null && TryGetMapped(canvas, out DragController mapped) == true) {
-                return mapped;
-            }
-
-            if (Active.Count == 1) {
-                return Active[0];
-            }
-
-            if (Application.isPlaying == false || canvas == null || _suspendAutoCreate == true || _creating == true) {
-                return null;
-            }
-
-            if (Active.Count > 1) {
-                Debug.LogWarning("[DragPlace] 有多个 DragController，当前物体父级没有指定，已在所在 Canvas 下创建 [DragPlace]。", member);
-            }
-
-            return CreateForCanvas(canvas);
-        }
+        // 克隆体不参加查找。
+        internal bool IsClone => _isClone;
 
         // 登记拖拽源，组 ID 取源上的 GroupId。
         public void RegisterSource(DragSource source) {
@@ -361,6 +324,7 @@ namespace CommonGameFramework.DragPlace {
             }
         }
 
+        // 第一次拖拽时创建当前这一次拖拽。
         CurrentDrag CurrentDrag {
             get {
                 if (_currentDrag == null) {
@@ -377,8 +341,8 @@ namespace CommonGameFramework.DragPlace {
                 return;
             }
 
-            if (Active.Contains(this) == false) {
-                Active.Add(this);
+            if (DragControllerLookup.Active.Contains(this) == false) {
+                DragControllerLookup.Active.Add(this);
             }
 
             RememberCanvas();
@@ -390,17 +354,17 @@ namespace CommonGameFramework.DragPlace {
                 return;
             }
 
-            _suspendAutoCreate = true;
+            DragControllerLookup.SuspendAutoCreate = true;
             try {
                 if (_currentDrag != null) {
                     _currentDrag.ForceStop();
                 }
 
-                Active.Remove(this);
+                DragControllerLookup.Active.Remove(this);
                 ForgetCanvas();
             }
             finally {
-                _suspendAutoCreate = false;
+                DragControllerLookup.SuspendAutoCreate = false;
             }
         }
 
@@ -410,18 +374,18 @@ namespace CommonGameFramework.DragPlace {
                 return;
             }
 
-            _suspendAutoCreate = true;
+            DragControllerLookup.SuspendAutoCreate = true;
             try {
                 if (_currentDrag != null) {
                     _currentDrag.ForceStop();
                 }
 
                 DetachMembers();
-                Active.Remove(this);
+                DragControllerLookup.Active.Remove(this);
                 ForgetCanvas();
             }
             finally {
-                _suspendAutoCreate = false;
+                DragControllerLookup.SuspendAutoCreate = false;
             }
         }
 
@@ -455,11 +419,11 @@ namespace CommonGameFramework.DragPlace {
             }
 
             int id = canvas.GetInstanceID();
-            if (ByCanvas.TryGetValue(id, out DragController existing) == true && existing != null && existing != this) {
+            if (DragControllerLookup.ByCanvas.TryGetValue(id, out DragController existing) == true && existing != null && existing != this) {
                 return;
             }
 
-            ByCanvas[id] = this;
+            DragControllerLookup.ByCanvas[id] = this;
             _trackedCanvasId = id;
         }
 
@@ -469,83 +433,12 @@ namespace CommonGameFramework.DragPlace {
                 return;
             }
 
-            if (ByCanvas.TryGetValue(_trackedCanvasId, out DragController existing) == true && existing == this) {
-                ByCanvas.Remove(_trackedCanvasId);
+            if (DragControllerLookup.ByCanvas.TryGetValue(_trackedCanvasId, out DragController existing) == true && existing == this) {
+                DragControllerLookup.ByCanvas.Remove(_trackedCanvasId);
             }
 
             _trackedCanvasId = 0;
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetStatics() {
-            Active.Clear();
-            ByCanvas.Clear();
-            _creating = false;
-            _suspendAutoCreate = false;
-        }
-
-        static DragController FindInParents(Component member) {
-            Transform current = member.transform;
-            while (current != null) {
-                DragController controller = current.GetComponent<DragController>();
-                if (controller != null && controller._isClone == false) {
-                    return controller;
-                }
-
-                current = current.parent;
-            }
-
-            return null;
-        }
-
-        static Canvas FindCanvas(Component member) {
-            Transform current = member.transform;
-            while (current != null) {
-                Canvas canvas = current.GetComponent<Canvas>();
-                if (canvas != null) {
-                    return canvas;
-                }
-
-                current = current.parent;
-            }
-
-            return null;
-        }
-
-        static bool TryGetMapped(Canvas canvas, out DragController controller) {
-            if (ByCanvas.TryGetValue(canvas.GetInstanceID(), out controller) == true && controller != null) {
-                return true;
-            }
-
-            controller = null;
-            return false;
-        }
-
-        // 在 Canvas 下创建 [DragPlace]，作为该画布的默认控制器和拖拽层。
-        static DragController CreateForCanvas(Canvas canvas) {
-            _creating = true;
-            try {
-                GameObject go = new GameObject("[DragPlace]", typeof(RectTransform));
-                go.layer = canvas.gameObject.layer;
-                Transform parent = canvas.transform;
-                go.transform.SetParent(parent, false);
-                RectTransform rect = (RectTransform)go.transform;
-                rect.anchorMin = Vector2.zero;
-                rect.anchorMax = Vector2.one;
-                rect.offsetMin = Vector2.zero;
-                rect.offsetMax = Vector2.zero;
-                rect.pivot = new Vector2(0.5f, 0.5f);
-                rect.SetAsLastSibling();
-                LayoutElement layout = go.AddComponent<LayoutElement>();
-                layout.ignoreLayout = true;
-                DragController created = go.AddComponent<DragController>();
-                created.MarkAutoCreated();
-                created.UseDragLayer(rect);
-                return created;
-            }
-            finally {
-                _creating = false;
-            }
-        }
     }
 }

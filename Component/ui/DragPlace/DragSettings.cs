@@ -9,8 +9,6 @@ namespace CommonGameFramework.DragPlace {
     /// </summary>
     [CreateAssetMenu(fileName = "DragSettings", menuName = "CommonGameFramework/Drag Settings")]
     public sealed class DragSettings : ScriptableObject {
-        static DragSettings _runtimeDefault;
-
         [FoldoutGroup("吸附")]
         [LabelText("是否吸附")]
         [SerializeField]
@@ -62,32 +60,5 @@ namespace CommonGameFramework.DragPlace {
         public float ReturnDuration => _returnDuration;
 
         public Ease ReturnEase => _returnEase;
-
-        /// <summary>settings 为空时返回带默认值的运行时实例。</summary>
-        public static DragSettings Resolve(DragSettings settings) {
-            if (settings != null) {
-                return settings;
-            }
-
-            return RuntimeDefault;
-        }
-
-        static DragSettings RuntimeDefault {
-            get {
-                if (_runtimeDefault != null) {
-                    return _runtimeDefault;
-                }
-
-                _runtimeDefault = CreateInstance<DragSettings>();
-                _runtimeDefault.name = "DragSettingsRuntimeDefault";
-                _runtimeDefault.hideFlags = HideFlags.HideAndDontSave;
-                return _runtimeDefault;
-            }
-        }
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetRuntimeDefault() {
-            _runtimeDefault = null;
-        }
     }
 }

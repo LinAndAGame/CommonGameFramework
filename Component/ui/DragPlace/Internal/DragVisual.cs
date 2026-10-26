@@ -132,9 +132,11 @@ namespace CommonGameFramework.DragPlace {
             float duration = settings.ReturnDuration;
             Ease ease = settings.ReturnEase;
             if (_fakeRect != null) {
+                // 有副本时让副本飞回原件。
                 await ReturnFake(source, duration, ease, generation);
             }
             else {
+                // 没有副本时让原件飞回原点。
                 await ReturnOrigin(source, duration, ease, generation);
             }
 
@@ -211,6 +213,7 @@ namespace CommonGameFramework.DragPlace {
             _returnTween = null;
         }
 
+        // 成功时按配置把原件换父，并吸附到放置点。
         void PlaceOrigin(DragSource source, DragPlace place, DragSettings settings) {
             if (source == null || place == null || place.RectTransform == null) {
                 return;
@@ -222,10 +225,12 @@ namespace CommonGameFramework.DragPlace {
             }
 
             if (settings.ReparentToPlaceOnSuccess == true) {
+                // 成功后把原件挂到放置点下。
                 target.SetParent(place.RectTransform, true);
             }
 
             if (settings.SnapEnabled == true) {
+                // 成功后贴到放置点坐标。
                 target.position = place.RectTransform.position;
             }
         }
@@ -251,6 +256,7 @@ namespace CommonGameFramework.DragPlace {
             target.localRotation = _originLocalRot;
         }
 
+        // 记下按下时指针和跟随物的世界偏移。
         void CaptureOffset(DragSource source, PointerEventData eventData) {
             _dragWorldOffset = Vector3.zero;
             if (eventData == null) {
@@ -279,18 +285,22 @@ namespace CommonGameFramework.DragPlace {
             _dragWorldOffset = moving.position - pressWorld;
         }
 
+        // 有副本时跟副本，否则跟原件。
         RectTransform GetMoving(DragSource source) {
+            RectTransform moving = null;
             if (_fakeRect != null) {
-                return _fakeRect;
+                // 拖的是副本。
+                moving = _fakeRect;
+            }
+            else if (source != null) {
+                // 拖的是原件。
+                moving = source.DragTarget;
             }
 
-            if (source == null) {
-                return null;
-            }
-
-            return source.DragTarget;
+            return moving;
         }
 
+        // 克隆原件到拖拽层，并关掉副本上的拖放组件。
         void CreateFake(DragSource source, RectTransform dragLayer, bool bringToFront) {
             DestroyFake();
             RectTransform origin = source.DragTarget;
@@ -322,6 +332,7 @@ namespace CommonGameFramework.DragPlace {
             }
         }
 
+        // 让副本的世界缩放和原件一致。
         void MatchWorldScale(RectTransform fake, RectTransform origin) {
             RectTransform parent = fake.parent as RectTransform;
             Vector3 parentLossy = parent != null ? parent.lossyScale : Vector3.one;
@@ -332,15 +343,23 @@ namespace CommonGameFramework.DragPlace {
                 DivideScale(originLossy.z, parentLossy.z));
         }
 
-        static float DivideScale(float originLossy, float parentLossy) {
+        // 父节点这一轴缩放为 0 时保留原缩放，避免除零。
+        float DivideScale(float originLossy, float parentLossy) {
+            float scale = originLossy;
             if (Mathf.Approximately(parentLossy, 0f) == true) {
-                return originLossy;
+                // 父节点这一轴没有缩放。
+                scale = originLossy;
+            }
+            else {
+                // 把世界缩放换回本地缩放。
+                scale = originLossy / parentLossy;
             }
 
-            return originLossy / parentLossy;
+            return scale;
         }
 
-        static void DisableFakeInteraction(GameObject fakeGo) {
+        // 关掉副本上的射线、拖拽源、放置点和控制器。
+        void DisableFakeInteraction(GameObject fakeGo) {
             CanvasGroup[] groups = fakeGo.GetComponentsInChildren<CanvasGroup>(true);
             for (int i = 0; i < groups.Length; i++) {
                 groups[i].blocksRaycasts = false;
@@ -376,6 +395,7 @@ namespace CommonGameFramework.DragPlace {
             }
         }
 
+        // 拖拽期间关掉射线，避免副本挡住放置点。
         void HideRaycasts(GameObject root) {
             if (root == null) {
                 return;
@@ -396,6 +416,7 @@ namespace CommonGameFramework.DragPlace {
             }
         }
 
+        // 同一张图不要重复记下原来的 raycastTarget。
         bool AlreadyHidden(Graphic graphic) {
             for (int i = 0; i < _hiddenGraphics.Count; i++) {
                 if (_hiddenGraphics[i].Graphic == graphic) {
@@ -406,6 +427,7 @@ namespace CommonGameFramework.DragPlace {
             return false;
         }
 
+        // 按拖拽前的值恢复射线。
         void RestoreRaycasts() {
             for (int i = 0; i < _hiddenGraphics.Count; i++) {
                 GraphicRaycastState state = _hiddenGraphics[i];
@@ -417,6 +439,7 @@ namespace CommonGameFramework.DragPlace {
             _hiddenGraphics.Clear();
         }
 
+        // 销毁跟随用的副本。
         void DestroyFake() {
             if (_fakeGo != null) {
                 Object.Destroy(_fakeGo);
@@ -426,6 +449,7 @@ namespace CommonGameFramework.DragPlace {
             _fakeRect = null;
         }
 
+        // 丢掉原点记录，避免下一次拖拽用到旧父节点。
         void ForgetOrigin() {
             _hasOrigin = false;
             _originParent = null;

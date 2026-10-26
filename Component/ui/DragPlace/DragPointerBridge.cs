@@ -51,16 +51,22 @@ namespace CommonGameFramework.DragPlace {
 
         // 优先用序列化引用，其次自身，再向父节点找。
         DragSource ResolveSource() {
+            DragSource source = _source;
             if (_source != null) {
-                return _source;
+                // 用已经绑好的源。
+                source = _source;
+            }
+            else {
+                // 先看自身，再向父节点找。
+                source = GetComponent<DragSource>();
+                if (source == null) {
+                    source = GetComponentInParent<DragSource>();
+                }
+
+                _source = source;
             }
 
-            _source = GetComponent<DragSource>();
-            if (_source == null) {
-                _source = GetComponentInParent<DragSource>();
-            }
-
-            return _source;
+            return source;
         }
     }
 }

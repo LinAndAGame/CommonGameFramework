@@ -9,6 +9,7 @@ namespace CommonGameFramework.DragPlace {
         readonly DragRegistry _registry;
         readonly DragController _controller;
 
+        // 记下登记表和控制器，命中时用它们过滤同组放置点。
         public DragHitTester(DragRegistry registry, DragController controller) {
             _registry = registry;
             _controller = controller;
@@ -16,39 +17,50 @@ namespace CommonGameFramework.DragPlace {
 
         // 找指针下的同组放置点。requireAccept 为真时还要能通过放置判定。
         public DragPlace Find(DragSource source, PointerEventData eventData, bool requireAccept) {
+            DragPlace found = null;
             if (source == null || eventData == null) {
-                return null;
+                // 没有源或指针。
+                found = null;
             }
-
-            if (EventSystem.current == null) {
-                return FindFallback(source, eventData, requireAccept);
+            else if (EventSystem.current == null) {
+                // 没有事件系统时改用矩形和吸附范围。
+                found = FindFallback(source, eventData, requireAccept);
             }
+            else {
+                // 射线从前往后找第一个同组放置点。
+                _raycastResults.Clear();
+                EventSystem.current.RaycastAll(eventData, _raycastResults);
+                for (int i = 0; i < _raycastResults.Count; i++) {
+                    GameObject go = _raycastResults[i].gameObject;
+                    if (go == null) {
+                        continue;
+                    }
 
-            _raycastResults.Clear();
-            EventSystem.current.RaycastAll(eventData, _raycastResults);
-            for (int i = 0; i < _raycastResults.Count; i++) {
-                GameObject go = _raycastResults[i].gameObject;
-                if (go == null) {
-                    continue;
+                    DragPlace place = go.GetComponentInParent<DragPlace>();
+                    if (place != null && IsCandidate(source, place, requireAccept) == true) {
+                        found = place;
+                        break;
+                    }
                 }
 
-                DragPlace place = go.GetComponentInParent<DragPlace>();
-                if (place != null && IsCandidate(source, place, requireAccept) == true) {
-                    return place;
+                if (found == null) {
+                    // 射线没有打中可放置的点。
+                    found = FindFallback(source, eventData, requireAccept);
                 }
             }
 
-            return FindFallback(source, eventData, requireAccept);
+            return found;
         }
 
         // 射线未命中时先看矩形，再看吸附范围。
         DragPlace FindFallback(DragSource source, PointerEventData eventData, bool requireAccept) {
-            DragPlace byRect = FindByRect(source, eventData, requireAccept);
-            if (byRect != null) {
-                return byRect;
+            DragPlace found = FindByRect(source, eventData, requireAccept);
+            if (found == null) {
+                // 矩形没命中，再按吸附范围找。
+                found = FindBySnapRange(source, eventData, requireAccept);
             }
 
-            return FindBySnapRange(source, eventData, requireAccept);
+            return found;
         }
 
         // 在同组放置点里取包含指针、层级最深的一个。
@@ -150,45 +162,57 @@ namespace CommonGameFramework.DragPlace {
 
         // 指针到放置点矩形边缘的距离，落在矩形内为 0。
         float GetPointerDistance(DragPlace place, PointerEventData eventData) {
-            if (place.ContainsScreenPoint(eventData.position, eventData.pressEventCamera) == true) {
-                return 0f;
+            float distance = float.MaxValue;
+            bool inside = place.ContainsScreenPoint(eventData.position, eventData.pressEventCamera);
+            bool converted = false;
+            Vector2 local = Vector2.zero;
+            if (inside == false && place.RectTransform != null) {
+                converted = RectTransformUtility.ScreenPointToLocalPointInRectangle(
+                    place.RectTransform,
+                    eventData.position,
+                    eventData.pressEventCamera,
+                    out local);
             }
 
-            if (place.RectTransform == null) {
-                return float.MaxValue;
+            if (inside == true) {
+                // 指针在矩形内，距离为 0。
+                distance = 0f;
+            }
+            else if (place.RectTransform == null || converted == false) {
+                // 无法换算到本地坐标。
+                distance = float.MaxValue;
+            }
+            else {
+                // 算指针到矩形边缘的距离。
+                Rect rect = place.RectTransform.rect;
+                float dx = 0f;
+                if (local.x < rect.xMin) {
+                    // 指针在矩形左边。
+                    dx = rect.xMin - local.x;
+                }
+                else if (local.x > rect.xMax) {
+                    // 指针在矩形右边。
+                    dx = local.x - rect.xMax;
+                }
+
+                float dy = 0f;
+                if (local.y < rect.yMin) {
+                    // 指针在矩形下边。
+                    dy = rect.yMin - local.y;
+                }
+                else if (local.y > rect.yMax) {
+                    // 指针在矩形上边。
+                    dy = local.y - rect.yMax;
+                }
+
+                distance = Mathf.Sqrt((dx * dx) + (dy * dy));
             }
 
-            bool converted = RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                place.RectTransform,
-                eventData.position,
-                eventData.pressEventCamera,
-                out Vector2 local);
-            if (converted == false) {
-                return float.MaxValue;
-            }
-
-            Rect rect = place.RectTransform.rect;
-            float dx = 0f;
-            if (local.x < rect.xMin) {
-                dx = rect.xMin - local.x;
-            }
-            else if (local.x > rect.xMax) {
-                dx = local.x - rect.xMax;
-            }
-
-            float dy = 0f;
-            if (local.y < rect.yMin) {
-                dy = rect.yMin - local.y;
-            }
-            else if (local.y > rect.yMax) {
-                dy = local.y - rect.yMax;
-            }
-
-            return Mathf.Sqrt((dx * dx) + (dy * dy));
+            return distance;
         }
 
         // 根节点深度为 1，子节点更大。
-        static int GetHierarchyDepth(Transform target) {
+        int GetHierarchyDepth(Transform target) {
             int depth = 0;
             Transform current = target;
             while (current != null) {

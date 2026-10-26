@@ -51,7 +51,7 @@ controller.DragSucceeded += args => { };
 
 对外脚本（模块根，游戏层会挂组件或订阅）：`DragController`、`DragSource`、`DragPlace`、`DragSettings`、`DragEventArgs`、`DragPointerBridge`。
 
-内部实现（`Internal/`）：`CurrentDrag` 是当前这一次拖拽（原先的 `DragSession`）；`DragHitTester` 做射线、矩形和吸附范围；`DragVisual` 管副本、跟随和回源；`DragCloneGuard` 在克隆时避免把副本登记成正式的源或放置点；`DragRegistry` 按 `groupId` 登记。不要再用 `Session` 做类型名。
+内部实现（`Internal/`）：`CurrentDrag` 是当前这一次拖拽（原先的 `DragSession`）；`DragHitTester` 做射线、矩形和吸附范围；`DragVisual` 管副本、跟随和回源；`DragCloneGuard` 在克隆时避免把副本登记成正式的源或放置点；`DragRegistry` 按 `groupId` 登记；`DragControllerLookup` 查找或创建控制器；`DragSettingsRuntime` 在配置为空时给出默认值。不要再用 `Session` 做类型名。
 
 ## 依赖
 
@@ -59,7 +59,7 @@ controller.DragSucceeded += args => { };
 
 ## 风格
 
-C# 开括号与声明或关键字同一行：`namespace CommonGameFramework.DragPlace {`、`public void Foo() {`、`if (x) {`、`else {`、`try {`。禁止 Allman（换行再写 `{`）。单行可以继续用 `=>`，或极短 `if (x) return;`。
+遵守 `.cursor/rules/csharp-style.mdc`。开括号与声明同一行，禁止 Allman。布尔写成 `== true` / `== false`。每个方法头部一行 `//`。静态方法放在 `static class`：查找控制器是 `DragControllerLookup`，空配置默认值是 `DragSettingsRuntime`。`DragController` 与 `DragSettings` 上不再挂静态方法。
 
 ## 禁止
 

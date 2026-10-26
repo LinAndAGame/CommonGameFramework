@@ -14,12 +14,14 @@ namespace CommonGameFramework.DragPlace {
         readonly List<DragPlace> _placeSnapshot = new List<DragPlace>();
 
         // 统一空组 ID，避免 null 和空字符串分成两组。
-        public static string Normalize(string groupId) {
+        public string Normalize(string groupId) {
+            string key = groupId;
             if (groupId == null) {
-                return string.Empty;
+                // null 和空字符串算同一组。
+                key = string.Empty;
             }
 
-            return groupId;
+            return key;
         }
 
         // 登记或改组一个拖拽源。
@@ -120,20 +122,24 @@ namespace CommonGameFramework.DragPlace {
 
         // 该组的源列表。没有成员时返回空列表，不拷贝。
         public IReadOnlyList<DragSource> GetSources(string groupId) {
+            IReadOnlyList<DragSource> result = EmptySources;
             if (_sourcesByGroup.TryGetValue(Normalize(groupId), out List<DragSource> list) == true) {
-                return list;
+                // 这一组已经有源。
+                result = list;
             }
 
-            return EmptySources;
+            return result;
         }
 
         // 该组的放置点列表。没有成员时返回空列表，不拷贝。
         public IReadOnlyList<DragPlace> GetPlaces(string groupId) {
+            IReadOnlyList<DragPlace> result = EmptyPlaces;
             if (_placesByGroup.TryGetValue(Normalize(groupId), out List<DragPlace> list) == true) {
-                return list;
+                // 这一组已经有放置点。
+                result = list;
             }
 
-            return EmptyPlaces;
+            return result;
         }
 
         // 拷贝当前全部源，供销毁时解除登记。返回的列表下次调用会被清空。
@@ -156,6 +162,7 @@ namespace CommonGameFramework.DragPlace {
             return _placeSnapshot;
         }
 
+        // 取出这一组的源列表，没有就新建。
         List<DragSource> GetOrCreateSources(string key) {
             if (_sourcesByGroup.TryGetValue(key, out List<DragSource> list) == false) {
                 list = new List<DragSource>();
@@ -165,6 +172,7 @@ namespace CommonGameFramework.DragPlace {
             return list;
         }
 
+        // 取出这一组的放置点列表，没有就新建。
         List<DragPlace> GetOrCreatePlaces(string key) {
             if (_placesByGroup.TryGetValue(key, out List<DragPlace> list) == false) {
                 list = new List<DragPlace>();
