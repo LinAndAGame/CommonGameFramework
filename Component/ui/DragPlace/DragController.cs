@@ -10,6 +10,7 @@ namespace CommonGameFramework.DragPlace
     /// <summary>
     /// 拖放会话。Source / Place 按 groupId 登记到这里。
     /// 没放控制器时，运行时会在 Canvas 下创建名为 [DragPlace] 的节点。
+    /// 失败回源用 DOTween，等待完成用 UniTask。框架依赖这两项插件。
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]

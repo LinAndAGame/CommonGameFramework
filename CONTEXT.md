@@ -101,8 +101,8 @@ _Avoid_: 框架层音效 enum；运行时 AddComponent AudioSource
 _Avoid_: 冷却里写死技能名 enum；Tracker 内部引用 Clock 具体类
 
 **DragController**:
-UI 拖放会话。`DragSource` / `DragPlace` 按 `groupId` 登记；负责副本跟随、命中、成功吸附与失败回源。未指定控制器时，运行时在 Canvas 下创建 `[DragPlace]`。
-_Avoid_: 游戏 Mid / UIWidget 中间层；DOTween；用 enum 预设业务槽位
+UI 拖放会话。`DragSource` / `DragPlace` 按 `groupId` 登记；负责副本跟随、命中、成功吸附与失败回源。未指定控制器时，运行时在 Canvas 下创建 `[DragPlace]`。失败回源用 DOTween，等待完成用 UniTask。框架依赖这两项插件。
+_Avoid_: 游戏 Mid / UIWidget 中间层；手写回源插值；用 enum 预设业务槽位
 
 **DragSource / DragPlace**:
 拖拽源与放置点。回调是 C# event。只有相同 `groupId`（含空字符串默认组）才能配对。

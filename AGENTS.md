@@ -5,6 +5,8 @@
 改了模块的公开入口、扩展点或禁止事项：先改该目录 `SKILL.md`，再改调用方。
 契约与代码冲突时以代码为准，并立刻改契约。
 
+框架依赖 DOTween 与 UniTask。DragPlace 的失败回源用 DOTween，等待完成用 UniTask。
+
 | 模块 | 契约 | 何时打开 |
 |------|------|----------|
 | Command | `Command/SKILL.md` | 改 CommandContext / IGameCommand，或游戏层写 Logic Command |

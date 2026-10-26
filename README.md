@@ -62,7 +62,7 @@ canvasRoot.RegisterCanvas(MainViewLayer.Instance, mainCanvas);
 
 ## DragPlace
 
-命名空间 `CommonGameFramework.DragPlace`。不依赖游戏 UI 中间层，回源用 UniTask 插值，不使用 DOTween。
+命名空间 `CommonGameFramework.DragPlace`。不依赖游戏 UI 中间层。框架依赖 DOTween 与 UniTask：失败回源用 DOTween（`Ease` 默认 `OutQuad`），等待完成用 UniTask。
 
 `DragSource` 与 `DragPlace` 写上相同的 `groupId` 就会配对（留空则同属默认组）。它们在启用时登记到 `DragController`。找不到已有控制器时，运行时在所属 Canvas 下创建 `[DragPlace]`。
 
@@ -202,5 +202,8 @@ achievements.Save();
 
 ## 依赖
 
-- UniTask
+框架必要插件：DOTween 与 UniTask。
+
+- UniTask（程序集名 `UniTask`）
+- DOTween：预编译 `DOTween.dll`，以及模块程序集 `DOTween.Modules`（Utility Panel 生成 ASMDEF 后保持该程序集名）。`DOMove`、`DOAnchorPos`、`AsyncWaitForCompletion` 在模块程序集里
 - Odin Inspector Attributes（预编译 DLL）

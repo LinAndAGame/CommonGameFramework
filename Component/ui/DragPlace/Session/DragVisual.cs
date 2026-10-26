@@ -1,13 +1,13 @@
 using System.Collections.Generic;
-using System.Threading;
 using Cysharp.Threading.Tasks;
+using DG.Tweening;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace CommonGameFramework.DragPlace
 {
-    /// <summary>拖拽跟随物：副本或原件、射线屏蔽、成功落点、失败回源。</summary>
+    /// <summary>拖拽跟随物：副本或原件、射线屏蔽、成功落点、失败回源。回源动画用 DOTween，完成用 UniTask 等待。</summary>
     internal sealed class DragVisual
     {
         struct GraphicRaycastState
@@ -28,6 +28,7 @@ namespace CommonGameFramework.DragPlace
         Vector3 _dragWorldOffset;
         GameObject _fakeGo;
         RectTransform _fakeRect;
+        Tween _returnTween;
 
         public int Generation => _generation;
 
@@ -110,6 +111,7 @@ namespace CommonGameFramework.DragPlace
         public void ApplySuccess(DragSource source, DragPlace place, DragSettings settings)
         {
             _generation++;
+            KillReturnTween();
             if (_fakeGo != null)
             {
                 DestroyFake();
@@ -127,6 +129,7 @@ namespace CommonGameFramework.DragPlace
         public void RestoreImmediate(DragSource source)
         {
             _generation++;
+            KillReturnTween();
             if (_fakeGo != null)
             {
                 DestroyFake();
@@ -140,23 +143,24 @@ namespace CommonGameFramework.DragPlace
             ForgetOrigin();
         }
 
-        // 失败回源。时长为 0 时瞬间完成。generation 变化表示被打断。
-        public async UniTask PlayReturn(DragSource source, DragSettings settings, int generation, CancellationToken token)
+        // 失败回源。时长为 0 时瞬间完成。StopDrag 或销毁会 Kill 当前 tween。
+        public async UniTask PlayReturn(DragSource source, DragSettings settings, int generation)
         {
             if (generation != _generation)
             {
                 return;
             }
 
+            KillReturnTween();
             float duration = settings.ReturnDuration;
-            DragEase ease = settings.ReturnEase;
+            Ease ease = settings.ReturnEase;
             if (_fakeRect != null)
             {
-                await ReturnFake(source, duration, ease, generation, token);
+                await ReturnFake(source, duration, ease, generation);
             }
             else
             {
-                await ReturnOrigin(source, duration, ease, generation, token);
+                await ReturnOrigin(source, duration, ease, generation);
             }
 
             if (generation != _generation)
@@ -164,12 +168,14 @@ namespace CommonGameFramework.DragPlace
                 return;
             }
 
+            KillReturnTween();
             DestroyFake();
             RestoreRaycasts();
             ForgetOrigin();
         }
 
-        async UniTask ReturnFake(DragSource source, float duration, DragEase ease, int generation, CancellationToken token)
+        // 副本飞回原件世界坐标，结束后销毁副本。
+        async UniTask ReturnFake(DragSource source, float duration, Ease ease, int generation)
         {
             RectTransform fake = _fakeRect;
             RectTransform origin = source != null ? source.DragTarget : null;
@@ -179,41 +185,26 @@ namespace CommonGameFramework.DragPlace
                 return;
             }
 
-            Vector3 from = fake.position;
-            Vector3 to = origin.position;
             if (duration <= 0f)
             {
                 DestroyFake();
                 return;
             }
 
-            float elapsed = 0f;
-            while (elapsed < duration)
+            Sequence seq = DOTween.Sequence();
+            seq.Join(fake.DOMove(origin.position, duration).SetEase(ease));
+            _returnTween = seq;
+            await seq.AsyncWaitForCompletion();
+            if (generation != _generation)
             {
-                if (generation != _generation || fake == null)
-                {
-                    return;
-                }
-
-                elapsed += Time.unscaledDeltaTime;
-                float t = elapsed / duration;
-                if (t > 1f)
-                {
-                    t = 1f;
-                }
-
-                float eased = DragEasing.Evaluate(ease, t);
-                fake.position = Vector3.LerpUnclamped(from, to, eased);
-                if (t >= 1f)
-                {
-                    return;
-                }
-
-                await UniTask.Yield(PlayerLoopTiming.Update, token);
+                return;
             }
+
+            DestroyFake();
         }
 
-        async UniTask ReturnOrigin(DragSource source, float duration, DragEase ease, int generation, CancellationToken token)
+        // 原件挂回拖拽前的父节点，再缓动局部位置、缩放和旋转。
+        async UniTask ReturnOrigin(DragSource source, float duration, Ease ease, int generation)
         {
             if (source == null)
             {
@@ -238,35 +229,23 @@ namespace CommonGameFramework.DragPlace
                 return;
             }
 
-            Vector2 fromPos = target.anchoredPosition;
-            Vector3 fromScale = target.localScale;
-            Quaternion fromRot = target.localRotation;
-            float elapsed = 0f;
-            while (elapsed < duration)
+            Sequence seq = DOTween.Sequence();
+            seq.Join(target.DOAnchorPos(_originAnchoredPos, duration).SetEase(ease));
+            seq.Join(target.DOScale(_originLocalScale, duration).SetEase(ease));
+            seq.Join(target.DOLocalRotate(_originLocalRot.eulerAngles, duration).SetEase(ease));
+            _returnTween = seq;
+            await seq.AsyncWaitForCompletion();
+        }
+
+        // 停掉正在播放的回源 tween。
+        void KillReturnTween()
+        {
+            if (_returnTween != null && _returnTween.IsActive() == true)
             {
-                if (generation != _generation || target == null)
-                {
-                    return;
-                }
-
-                elapsed += Time.unscaledDeltaTime;
-                float t = elapsed / duration;
-                if (t > 1f)
-                {
-                    t = 1f;
-                }
-
-                float eased = DragEasing.Evaluate(ease, t);
-                target.anchoredPosition = Vector2.LerpUnclamped(fromPos, _originAnchoredPos, eased);
-                target.localScale = Vector3.LerpUnclamped(fromScale, _originLocalScale, eased);
-                target.localRotation = Quaternion.SlerpUnclamped(fromRot, _originLocalRot, eased);
-                if (t >= 1f)
-                {
-                    return;
-                }
-
-                await UniTask.Yield(PlayerLoopTiming.Update, token);
+                _returnTween.Kill();
             }
+
+            _returnTween = null;
         }
 
         void PlaceOrigin(DragSource source, DragPlace place, DragSettings settings)

@@ -1,3 +1,4 @@
+using DG.Tweening;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
@@ -5,6 +6,7 @@ namespace CommonGameFramework.DragPlace
 {
     /// <summary>
     /// 拖放配置。未赋值时使用字段默认值（运行时一份隐藏实例）。
+    /// 回源缓动使用 DOTween 的 Ease。框架依赖 DOTween 与 UniTask。
     /// </summary>
     [CreateAssetMenu(fileName = "DragSettings", menuName = "CommonGameFramework/Drag Settings")]
     public sealed class DragSettings : ScriptableObject
@@ -47,7 +49,7 @@ namespace CommonGameFramework.DragPlace
         [FoldoutGroup("回源")]
         [LabelText("失败回源缓动")]
         [SerializeField]
-        DragEase _returnEase = DragEase.OutQuad;
+        Ease _returnEase = Ease.OutQuad;
 
         public bool SnapEnabled => _snapEnabled;
 
@@ -61,7 +63,7 @@ namespace CommonGameFramework.DragPlace
 
         public float ReturnDuration => _returnDuration;
 
-        public DragEase ReturnEase => _returnEase;
+        public Ease ReturnEase => _returnEase;
 
         /// <summary>settings 为空时返回带默认值的运行时实例。</summary>
         public static DragSettings Resolve(DragSettings settings)

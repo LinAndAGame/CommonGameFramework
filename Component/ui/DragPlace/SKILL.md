@@ -5,7 +5,7 @@ description: 使用或修改 CommonGameFramework DragPlace。接 DragSource / Dr
 
 # DragPlace
 
-命名空间 `CommonGameFramework.DragPlace`。目录 `Component/ui/DragPlace/`。只依赖 Unity UI 与 UniTask，不依赖游戏 Mid / UIWidget，也不使用 DOTween。
+命名空间 `CommonGameFramework.DragPlace`。目录 `Component/ui/DragPlace/`。不依赖游戏 Mid / UIWidget。框架依赖 DOTween 与 UniTask：失败回源用 DOTween（`DOMove` / `DOAnchorPos` / `DOScale` / `DOLocalRotate`、`Sequence`、`SetEase`、`Kill`），完成等待用 UniTask `await` DOTween 的 `AsyncWaitForCompletion()`。
 
 ## 入口
 
@@ -37,17 +37,22 @@ controller.DragSucceeded += args => { };
 
 移动：跟随指针，并用射线、矩形、吸附范围（像素，矩形外到边缘的距离）检测同组放置点，派发进入/离开。悬停不要求 `CanAccept`，松开才要求。
 
-松开：同组且 `DragPlace.CanAccept` 与控制器 `SetCanPlaceHandler` 都通过则成功。有克隆时销毁克隆，原件不动；没有克隆时按配置换父并吸附到放置点。失败则按 `ReturnDuration` / `DragEase` 回源（时长 0 立即回去）。回源用 `Time.unscaledDeltaTime`，暂停 `timeScale` 时仍会播完。回源结束前不能开始下一次拖拽；`StopDrag()` 会立刻收回并允许再拖。`SnapEnabled` 同时决定吸附范围和成功时是否贴到放置点坐标。
+松开：同组且 `DragPlace.CanAccept` 与控制器 `SetCanPlaceHandler` 都通过则成功。有克隆时销毁克隆，原件不动；没有克隆时按配置换父并吸附到放置点。失败则按 `ReturnDuration` / `ReturnEase` 回源（时长 0 立即回去）。有副本时 `Sequence` 里 `DOMove` 飞回原件世界坐标，结束后销毁副本；没有副本时先挂回原父节点，再对 `RectTransform` 做 `DOAnchorPos` / `DOScale` / `DOLocalRotate`。当前回源 tween 存在 `Tween` 字段里，`StopDrag()` 或控制器销毁会 `Kill()`。缓动走 DOTween 默认更新（受 `timeScale` 影响）。回源结束前不能开始下一次拖拽；`StopDrag()` 会立刻收回并允许再拖。`SnapEnabled` 同时决定吸附范围和成功时是否贴到放置点坐标。
 
 ## 扩展点
 
-`DragSettings`（ScriptableObject，菜单 CommonGameFramework/Drag Settings）配置吸附、克隆、置顶、成功换父、回源时长与缓动。`DragEase` 只有 `Linear` 与 `OutQuad`。
+`DragSettings`（ScriptableObject，菜单 CommonGameFramework/Drag Settings）配置吸附、克隆、置顶、成功换父、回源时长与缓动。`ReturnEase` 是 DOTween 的 `Ease`，默认 `OutQuad`。
 
 回调是 C# event：源上 `BeginDrag` / `Dragging` / `EndDrag` / `DragSucceeded` / `DragFailed`；放置点上 `Entered` / `Exited` / `DragSucceeded` / `DragFailed`；控制器上成功、失败、进入、离开。自定义指针可以调用 `DragSource.ProcessBeginDrag` / `ProcessDrag` / `ProcessEndDrag`，或 `DragController.HandleBeginDrag` / `HandleDrag` / `HandleEndDrag`。
 
+## 依赖
+
+框架依赖 DOTween 与 UniTask。`CommonGameFramework.asmdef` 引用程序集 `UniTask`、`DOTween.Modules`，并预编译引用 `DOTween.dll`。`Tween` / `Ease` / `DOTween.Sequence` 在 `DOTween.dll`；`DOMove`、`DOAnchorPos`、`DOScale`、`DOLocalRotate`、`AsyncWaitForCompletion` 在 `DOTween.Modules`。用 DOTween Utility Panel 生成 ASMDEF 后，程序集名必须保持 `DOTween.Modules`。
+
 ## 禁止
 
-- 依赖 `UIWidget`、`WidgetType`、游戏 `UIEvent` / `Language.Config` / DOTween
+- 依赖 `UIWidget`、`WidgetType`、游戏 `UIEvent` / `Language.Config`
+- 用手写插值代替 DOTween 回源
 - 用框架 enum 预设卡牌槽、战斗阶段等业务分组（分组只是字符串 `groupId`）
 - 在拖拽回调里把表现当权威状态写回战斗结算
 - 为了能拖而运行时给业务物体 `AddComponent` 拼 UI；源上需要能被射线打中的 `Graphic`

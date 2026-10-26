@@ -1,5 +1,3 @@
-using System;
-using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine.EventSystems;
 
@@ -259,15 +257,7 @@ namespace CommonGameFramework.DragPlace
         // 回源动画。会话号变了说明回调里已经开始新拖拽或被 StopDrag 打断。
         async UniTask RunReturn(DragSource source, int generation, int sessionId)
         {
-            CancellationToken token = _controller.GetCancellationTokenOnDestroy();
-            try
-            {
-                await _visual.PlayReturn(source, _controller.EffectiveSettings, generation, token);
-            }
-            catch (OperationCanceledException)
-            {
-                return;
-            }
+            await _visual.PlayReturn(source, _controller.EffectiveSettings, generation);
 
             if (generation != _visual.Generation || sessionId != _sessionId || _dragging != source)
             {
