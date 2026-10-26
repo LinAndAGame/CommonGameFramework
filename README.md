@@ -17,7 +17,7 @@
 | `Stat` | 属性聚合 | `Core/`；`Float/`；`Int/`；`Bool/` |
 | `Achievement` | 本地权威 + 可选平台 | 根 `AchievementService`；`Core/`；`Local/`；`Platform/` |
 | `View` | BaseView 异步 Open/Hide | 根 `ViewFlowController`；`Core/`；`Stack/`；`Canvas/` |
-| `DragPlace` | UI 拖放；`groupId` 配对源和放置点 | `Component/ui/DragPlace/`；根 `DragController`；`Source/`；`Place/`；`Dragging/`；`Visual/` |
+| `DragPlace` | UI 拖放；`groupId` 配对源和放置点 | `Component/ui/DragPlace/` 平铺，不为单文件建子文件夹 |
 | `MVC` | 模型快照、视图刷新、控制器生命周期 | 根 `MvcScope`；`Model/`；`View/`；`Controller/` |
 | `StateMachine` | 通用 FSM | 扁平 |
 | `Style` | 样式切换 | 扁平 |
