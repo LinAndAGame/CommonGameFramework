@@ -204,7 +204,7 @@ namespace CommonGameFramework.DragPlace {
 
         // 按指定控制器、父节点或 Canvas 重新登记。
         void Rebind() {
-            DragController next = DragControllerLookup.Resolve(this, _assignedController);
+            DragController next = DragControllerHelper.Resolve(this, _assignedController);
             if (next == _owner) {
                 // 还是原来的控制器，只刷新分组。
                 if (next != null) {

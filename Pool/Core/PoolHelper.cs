@@ -5,7 +5,7 @@ namespace CommonGameFramework.Pool
     /// <summary>
     /// Mono 对象池运行时根节点，替代场景内 PoolManager。
     /// </summary>
-    internal static class PoolRuntime
+    internal static class PoolHelper
     {
         static Transform _root;
 

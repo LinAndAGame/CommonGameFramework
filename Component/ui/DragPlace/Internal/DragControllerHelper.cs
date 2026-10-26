@@ -3,8 +3,8 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 
 namespace CommonGameFramework.DragPlace {
-    /// <summary>查找或创建 DragController。静态方法放在这个 static class 里。</summary>
-    internal static class DragControllerLookup {
+    /// <summary>查找或创建 DragController 的静态帮助类。</summary>
+    internal static class DragControllerHelper {
         internal static readonly List<DragController> Active = new List<DragController>();
         internal static readonly Dictionary<int, DragController> ByCanvas = new Dictionary<int, DragController>();
         internal static bool Creating;

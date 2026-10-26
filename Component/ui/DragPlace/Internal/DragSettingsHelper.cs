@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace CommonGameFramework.DragPlace {
     /// <summary>空的 DragSettings 用一份隐藏的运行时默认值补上。</summary>
-    internal static class DragSettingsRuntime {
+    internal static class DragSettingsHelper {
         static DragSettings _runtimeDefault;
 
         // 已传入配置就用它，否则返回隐藏的默认实例。
@@ -19,7 +19,7 @@ namespace CommonGameFramework.DragPlace {
             else {
                 // 第一次使用时创建一份不进场景的默认配置。
                 _runtimeDefault = ScriptableObject.CreateInstance<DragSettings>();
-                _runtimeDefault.name = "DragSettingsRuntimeDefault";
+                _runtimeDefault.name = "DragSettingsHelperDefault";
                 _runtimeDefault.hideFlags = HideFlags.HideAndDontSave;
                 resolved = _runtimeDefault;
             }

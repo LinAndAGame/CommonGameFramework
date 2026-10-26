@@ -15,6 +15,7 @@ alwaysApply: true
 - 局部函数只能放在宿主方法体末尾，主流程在前；可以写在 `return` 之后。
 - 互斥业务用 `if / else if / else`，分支里写全逻辑。每个分支前一行业务注释。禁止中间 `return` 后再写同级业务分支。守卫性提前 `return` 可以，其后不要再接同级业务分支。
 - 静态方法只能写在 `static class` 里。实例类禁止任何 `static` 方法（含 private）。`[RuntimeInitializeOnLoadMethod]` 也放到 static class。
+- 纯静态帮助类以 `Helper` 结尾，例如 `DragControllerHelper`、`DragSettingsHelper`。不要用 `Lookup`、`Runtime` 给这类类命名。
 - `abstract class` 名以 `Base` 开头。
 - 只读集合对外用 `IReadOnlyList<T>`，禁止在 getter 里 `.ToList()` 做防御拷贝。
 - `GetComponent` / `Find` 只在初始化时缓存。注释用中文。

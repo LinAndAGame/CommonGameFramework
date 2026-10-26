@@ -7,7 +7,7 @@
 
 框架依赖 DOTween 与 UniTask。DragPlace 的失败回源用 DOTween，等待完成用 UniTask。
 
-命名优先用业务能直接读懂的词（当前拖拽、放置点、回源、吸附等）。禁止用 `Session` / `session` 表示临时运行时状态。类型、目录、字段、注释都遵守。
+命名优先用业务能直接读懂的词（当前拖拽、放置点、回源、吸附等）。禁止用 `Session` / `session` 表示临时运行时状态。纯静态帮助类以 `Helper` 结尾。类型、目录、字段、注释都遵守。
 
 C# 风格见 `.cursor/rules/csharp-style.mdc`。开括号与声明同一行，禁止 Allman。布尔写成 `== true` / `== false`，禁止 `if (flag)` / `if (!flag)`。每个方法头部一行 `//`。局部函数放在宿主方法末尾。互斥业务用 `if / else if / else`，分支前写注释，禁止中间 `return` 后再写同级业务分支。静态方法只能在 `static class`。`abstract class` 以 `Base` 开头。DragPlace 已按此写；旧模块不要顺手全库重排。
 

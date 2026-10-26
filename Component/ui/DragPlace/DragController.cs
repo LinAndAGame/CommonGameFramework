@@ -62,7 +62,7 @@ namespace CommonGameFramework.DragPlace {
         public event Action<DragEventArgs> DragFailed;
 
         // 未指定资产时用运行时默认配置。
-        internal DragSettings EffectiveSettings => DragSettingsRuntime.Resolve(_settings);
+        internal DragSettings EffectiveSettings => DragSettingsHelper.Resolve(_settings);
 
         // 克隆体不参加查找。
         internal bool IsClone => _isClone;
@@ -341,8 +341,8 @@ namespace CommonGameFramework.DragPlace {
                 return;
             }
 
-            if (DragControllerLookup.Active.Contains(this) == false) {
-                DragControllerLookup.Active.Add(this);
+            if (DragControllerHelper.Active.Contains(this) == false) {
+                DragControllerHelper.Active.Add(this);
             }
 
             RememberCanvas();
@@ -354,17 +354,17 @@ namespace CommonGameFramework.DragPlace {
                 return;
             }
 
-            DragControllerLookup.SuspendAutoCreate = true;
+            DragControllerHelper.SuspendAutoCreate = true;
             try {
                 if (_currentDrag != null) {
                     _currentDrag.ForceStop();
                 }
 
-                DragControllerLookup.Active.Remove(this);
+                DragControllerHelper.Active.Remove(this);
                 ForgetCanvas();
             }
             finally {
-                DragControllerLookup.SuspendAutoCreate = false;
+                DragControllerHelper.SuspendAutoCreate = false;
             }
         }
 
@@ -374,18 +374,18 @@ namespace CommonGameFramework.DragPlace {
                 return;
             }
 
-            DragControllerLookup.SuspendAutoCreate = true;
+            DragControllerHelper.SuspendAutoCreate = true;
             try {
                 if (_currentDrag != null) {
                     _currentDrag.ForceStop();
                 }
 
                 DetachMembers();
-                DragControllerLookup.Active.Remove(this);
+                DragControllerHelper.Active.Remove(this);
                 ForgetCanvas();
             }
             finally {
-                DragControllerLookup.SuspendAutoCreate = false;
+                DragControllerHelper.SuspendAutoCreate = false;
             }
         }
 
@@ -419,11 +419,11 @@ namespace CommonGameFramework.DragPlace {
             }
 
             int id = canvas.GetInstanceID();
-            if (DragControllerLookup.ByCanvas.TryGetValue(id, out DragController existing) == true && existing != null && existing != this) {
+            if (DragControllerHelper.ByCanvas.TryGetValue(id, out DragController existing) == true && existing != null && existing != this) {
                 return;
             }
 
-            DragControllerLookup.ByCanvas[id] = this;
+            DragControllerHelper.ByCanvas[id] = this;
             _trackedCanvasId = id;
         }
 
@@ -433,8 +433,8 @@ namespace CommonGameFramework.DragPlace {
                 return;
             }
 
-            if (DragControllerLookup.ByCanvas.TryGetValue(_trackedCanvasId, out DragController existing) == true && existing == this) {
-                DragControllerLookup.ByCanvas.Remove(_trackedCanvasId);
+            if (DragControllerHelper.ByCanvas.TryGetValue(_trackedCanvasId, out DragController existing) == true && existing == this) {
+                DragControllerHelper.ByCanvas.Remove(_trackedCanvasId);
             }
 
             _trackedCanvasId = 0;
