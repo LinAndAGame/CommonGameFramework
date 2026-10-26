@@ -4,6 +4,8 @@
 
 ## Language
 
+命名优先用业务能直接读懂的词（当前拖拽、放置点、回源、吸附等）。禁止用 Session/session 表示临时运行时状态。类型、目录、字段、注释都遵守。
+
 **Logic Command**:
 同步执行的逻辑动作，通过 `IGameCommand` 修改权威游戏状态。
 _Avoid_: 把异步动效写成 Command
@@ -101,7 +103,7 @@ _Avoid_: 框架层音效 enum；运行时 AddComponent AudioSource
 _Avoid_: 冷却里写死技能名 enum；Tracker 内部引用 Clock 具体类
 
 **DragController**:
-UI 拖放会话。`DragSource` / `DragPlace` 按 `groupId` 登记；负责副本跟随、命中、成功吸附与失败回源。未指定控制器时，运行时在 Canvas 下创建 `[DragPlace]`。失败回源用 DOTween，等待完成用 UniTask。框架依赖这两项插件。
+当前拖拽的控制器。`DragSource` / `DragPlace` 按 `groupId` 登记；负责副本跟随、命中、成功吸附与失败回源。未指定控制器时，运行时在 Canvas 下创建 `[DragPlace]`。失败回源用 DOTween，等待完成用 UniTask。框架依赖这两项插件。内部类型 `CurrentDrag` 表示这一次拖拽，不要用 Session 命名。
 _Avoid_: 游戏 Mid / UIWidget 中间层；手写回源插值；用 enum 预设业务槽位
 
 **DragSource / DragPlace**:

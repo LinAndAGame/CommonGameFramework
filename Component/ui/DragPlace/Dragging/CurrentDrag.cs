@@ -3,8 +3,8 @@ using UnityEngine.EventSystems;
 
 namespace CommonGameFramework.DragPlace
 {
-    /// <summary>一次拖拽的开始、移动、成功落地和失败回源。</summary>
-    internal sealed class DragSession
+    /// <summary>当前这一次拖拽：开始、跟随、成功落地和失败回源。</summary>
+    internal sealed class CurrentDrag
     {
         readonly DragController _controller;
         readonly DragRegistry _registry;
@@ -16,9 +16,9 @@ namespace CommonGameFramework.DragPlace
         PointerEventData _lastPointer;
         bool _returning;
         bool _stopping;
-        int _sessionId;
+        int _currentDragId;
 
-        public DragSession(DragController controller, DragRegistry registry)
+        public CurrentDrag(DragController controller, DragRegistry registry)
         {
             _controller = controller;
             _registry = registry;
@@ -43,11 +43,11 @@ namespace CommonGameFramework.DragPlace
                 ForceStop();
             }
 
-            _sessionId++;
+            _currentDragId++;
             _dragging = source;
             _returning = false;
             _lastPointer = eventData;
-            source.SetSessionLocked(true);
+            source.SetDragLocked(true);
             _visual.Begin(source, eventData, _controller.EffectiveSettings, _controller.ResolveDragLayer());
             source.RaiseBeginDrag(eventData);
         }
@@ -140,7 +140,7 @@ namespace CommonGameFramework.DragPlace
             _controller.RaisePlaceExited(exitArgs);
         }
 
-        // 源被移出时立刻还原它的视觉并清掉会话。
+        // 源被移出时立刻还原它的视觉并清掉当前拖拽。
         public void NotifySourceRemoved(DragSource source)
         {
             if (_dragging != source)
@@ -165,12 +165,12 @@ namespace CommonGameFramework.DragPlace
             }
 
             _stopping = true;
-            _sessionId++;
+            _currentDragId++;
             try
             {
                 DragSource source = _dragging;
                 _visual.RestoreImmediate(source);
-                ClearSession();
+                ClearDrag();
             }
             finally
             {
@@ -210,9 +210,9 @@ namespace CommonGameFramework.DragPlace
 
         void Succeed(DragSource source, DragPlace place, DragEventArgs args)
         {
-            _sessionId++;
+            _currentDragId++;
             _visual.ApplySuccess(source, place, _controller.EffectiveSettings);
-            ClearSession();
+            ClearDrag();
             place.RaiseSucceeded(args);
             source.RaiseSucceeded(args);
             _controller.RaiseSucceeded(args);
@@ -236,7 +236,7 @@ namespace CommonGameFramework.DragPlace
                 return;
             }
 
-            int sessionId = _sessionId;
+            int currentDragId = _currentDragId;
             _returning = true;
             source.RaiseFailed(args);
             _controller.RaiseFailed(args);
@@ -246,32 +246,32 @@ namespace CommonGameFramework.DragPlace
                 rejected.RaiseFailed(placeArgs);
             }
 
-            if (sessionId != _sessionId || _dragging != source)
+            if (currentDragId != _currentDragId || _dragging != source)
             {
                 return;
             }
 
-            RunReturn(source, _visual.Generation, sessionId).Forget();
+            RunReturn(source, _visual.Generation, currentDragId).Forget();
         }
 
-        // 回源动画。会话号变了说明回调里已经开始新拖拽或被 StopDrag 打断。
-        async UniTask RunReturn(DragSource source, int generation, int sessionId)
+        // 回源动画。拖拽编号变了说明已经开始下一次拖拽或被 StopDrag 打断。
+        async UniTask RunReturn(DragSource source, int generation, int currentDragId)
         {
             await _visual.PlayReturn(source, _controller.EffectiveSettings, generation);
 
-            if (generation != _visual.Generation || sessionId != _sessionId || _dragging != source)
+            if (generation != _visual.Generation || currentDragId != _currentDragId || _dragging != source)
             {
                 return;
             }
 
-            ClearSession();
+            ClearDrag();
             if (source != null)
             {
                 source.RebindIfPlaying();
             }
         }
 
-        void ClearSession()
+        void ClearDrag()
         {
             DragSource source = _dragging;
             _dragging = null;
@@ -280,7 +280,7 @@ namespace CommonGameFramework.DragPlace
             _returning = false;
             if (source != null)
             {
-                source.SetSessionLocked(false);
+                source.SetDragLocked(false);
             }
         }
 

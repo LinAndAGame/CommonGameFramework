@@ -8,7 +8,7 @@ using UnityEngine.UI;
 namespace CommonGameFramework.DragPlace
 {
     /// <summary>
-    /// 拖放会话。Source / Place 按 groupId 登记到这里。
+    /// 当前拖拽的控制器。Source / Place 按 groupId 登记到这里。
     /// 没放控制器时，运行时会在 Canvas 下创建名为 [DragPlace] 的节点。
     /// 失败回源用 DOTween，等待完成用 UniTask。框架依赖这两项插件。
     /// </summary>
@@ -37,7 +37,7 @@ namespace CommonGameFramework.DragPlace
         DragSettings _settings;
 
         readonly DragRegistry _registry = new DragRegistry();
-        DragSession _session;
+        CurrentDrag _currentDrag;
         int _trackedCanvasId;
         bool _autoCreated;
         bool _isClone;
@@ -152,7 +152,7 @@ namespace CommonGameFramework.DragPlace
             _registry.UntrackSource(source);
             if (tracked == true)
             {
-                Session.NotifySourceRemoved(source);
+                CurrentDrag.NotifySourceRemoved(source);
             }
 
             source.Detach(this);
@@ -223,7 +223,7 @@ namespace CommonGameFramework.DragPlace
             _registry.UntrackPlace(place);
             if (tracked == true)
             {
-                Session.NotifyPlaceRemoved(place);
+                CurrentDrag.NotifyPlaceRemoved(place);
             }
 
             place.Detach(this);
@@ -268,30 +268,30 @@ namespace CommonGameFramework.DragPlace
         // 开始拖拽。自定义指针也可以直接调用。
         public void HandleBeginDrag(DragSource source, PointerEventData eventData)
         {
-            Session.Begin(source, eventData);
+            CurrentDrag.Begin(source, eventData);
         }
 
         // 拖拽移动。
         public void HandleDrag(DragSource source, PointerEventData eventData)
         {
-            Session.Drag(source, eventData);
+            CurrentDrag.Drag(source, eventData);
         }
 
         // 结束拖拽。
         public void HandleEndDrag(DragSource source, PointerEventData eventData)
         {
-            Session.End(source, eventData);
+            CurrentDrag.End(source, eventData);
         }
 
         // 立刻结束当前拖拽或回源，视觉回到拖拽前。
         public void StopDrag()
         {
-            if (_session == null)
+            if (_currentDrag == null)
             {
                 return;
             }
 
-            _session.ForceStop();
+            _currentDrag.ForceStop();
         }
 
         // 源的组 ID 已在组件上改过，这里只刷新索引。
@@ -430,16 +430,16 @@ namespace CommonGameFramework.DragPlace
             }
         }
 
-        DragSession Session
+        CurrentDrag CurrentDrag
         {
             get
             {
-                if (_session == null)
+                if (_currentDrag == null)
                 {
-                    _session = new DragSession(this, _registry);
+                    _currentDrag = new CurrentDrag(this, _registry);
                 }
 
-                return _session;
+                return _currentDrag;
             }
         }
 
@@ -470,9 +470,9 @@ namespace CommonGameFramework.DragPlace
             _suspendAutoCreate = true;
             try
             {
-                if (_session != null)
+                if (_currentDrag != null)
                 {
-                    _session.ForceStop();
+                    _currentDrag.ForceStop();
                 }
 
                 Active.Remove(this);
@@ -495,9 +495,9 @@ namespace CommonGameFramework.DragPlace
             _suspendAutoCreate = true;
             try
             {
-                if (_session != null)
+                if (_currentDrag != null)
                 {
-                    _session.ForceStop();
+                    _currentDrag.ForceStop();
                 }
 
                 DetachMembers();
@@ -521,7 +521,7 @@ namespace CommonGameFramework.DragPlace
                 if (source != null)
                 {
                     source.Detach(this);
-                    source.SetSessionLocked(false);
+                    source.SetDragLocked(false);
                 }
             }
 
@@ -626,7 +626,7 @@ namespace CommonGameFramework.DragPlace
             return false;
         }
 
-        // 在 Canvas 下创建 [DragPlace]，作为该画布的默认会话和拖拽层。
+        // 在 Canvas 下创建 [DragPlace]，作为该画布的默认控制器和拖拽层。
         static DragController CreateForCanvas(Canvas canvas)
         {
             _creating = true;

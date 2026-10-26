@@ -1,7 +1,7 @@
 namespace CommonGameFramework.DragPlace
 {
     /// <summary>
-    /// Instantiate 拖拽副本期间关掉自动注册，避免副本上的 Source/Place/Controller 加入正式会话。
+    /// Instantiate 拖拽副本期间关掉自动注册，避免副本上的 Source/Place/Controller 被登记成正式的拖拽源或放置点。
     /// </summary>
     internal static class DragCloneGuard
     {

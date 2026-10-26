@@ -34,7 +34,7 @@ namespace CommonGameFramework.DragPlace
         DragController _assignedController;
 
         DragController _owner;
-        bool _sessionLocked;
+        bool _dragLocked;
         bool _isClone;
         bool _warnedGraphic;
         bool _warnedNoController;
@@ -176,16 +176,16 @@ namespace CommonGameFramework.DragPlace
             _isClone = true;
         }
 
-        // 会话改父节点期间不要因为 OnTransformParentChanged 重新登记。
-        internal void SetSessionLocked(bool locked)
+        // 拖拽改父节点期间不要因为 OnTransformParentChanged 重新登记。
+        internal void SetDragLocked(bool locked)
         {
-            _sessionLocked = locked;
+            _dragLocked = locked;
         }
 
-        // 会话结束后按当前位置重新查找控制器。
+        // 这一次拖拽结束后按当前位置重新查找控制器。
         internal void RebindIfPlaying()
         {
-            if (_isClone == true || _sessionLocked == true)
+            if (_isClone == true || _dragLocked == true)
             {
                 return;
             }
@@ -295,10 +295,10 @@ namespace CommonGameFramework.DragPlace
             }
         }
 
-        // 换父节点后，若不在拖拽会话里，重新查找控制器。
+        // 换父节点后，若不是正在拖拽改父，重新查找控制器。
         void OnTransformParentChanged()
         {
-            if (_isClone == true || _sessionLocked == true || DragCloneGuard.IsCloning == true)
+            if (_isClone == true || _dragLocked == true || DragCloneGuard.IsCloning == true)
             {
                 return;
             }
@@ -315,7 +315,7 @@ namespace CommonGameFramework.DragPlace
         // 运行中在 Inspector 改组 ID 时同步登记。
         void OnValidate()
         {
-            if (Application.isPlaying == true && _owner != null && _sessionLocked == false)
+            if (Application.isPlaying == true && _owner != null && _dragLocked == false)
             {
                 _owner.RefreshSourceGroup(this);
             }

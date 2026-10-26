@@ -7,6 +7,8 @@
 
 框架依赖 DOTween 与 UniTask。DragPlace 的失败回源用 DOTween，等待完成用 UniTask。
 
+命名优先用业务能直接读懂的词（当前拖拽、放置点、回源、吸附等）。禁止用 `Session` / `session` 表示临时运行时状态。类型、目录、字段、注释都遵守。
+
 | 模块 | 契约 | 何时打开 |
 |------|------|----------|
 | Command | `Command/SKILL.md` | 改 CommandContext / IGameCommand，或游戏层写 Logic Command |

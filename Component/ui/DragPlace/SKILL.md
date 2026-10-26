@@ -9,7 +9,7 @@ description: 使用或修改 CommonGameFramework DragPlace。接 DragSource / Dr
 
 ## 入口
 
-`DragSource` 是拖拽源，`DragPlace` 是放置点，`DragController` 持有一次拖拽会话。两者用 `groupId`（空字符串也算一组）配对，并在 `OnEnable` 时向控制器注册。
+`DragSource` 是拖拽源，`DragPlace` 是放置点，`DragController` 负责当前这一次拖拽。两者用 `groupId`（空字符串也算一组）配对，并在 `OnEnable` 时向控制器注册。
 
 查找控制器的顺序：组件上指定的控制器、父节点上的 `DragController`、该 Canvas 已有的控制器、场景里唯一的控制器。都没有时，运行时在所属 Canvas 下创建 `[DragPlace]`（拖拽层就是这个节点）。不在 Canvas 下且没有控制器时不会拖拽。
 
@@ -31,9 +31,9 @@ controller.DragSucceeded += args => { };
 
 射线目标可以在子节点上。子节点自己实现了拖拽接口时，在那个节点挂 `DragPointerBridge` 并指向 `DragSource`。
 
-## 会话
+## 一次拖拽
 
-开始：记录原点。`CreateFakeOnDrag` 为真时克隆跟随指针，原件留在原地；否则直接移动原件。`BringToFront` 把跟随物放到拖拽层最后。
+`DragController` 只记当前这一次拖拽。开始：记录原点。`CreateFakeOnDrag` 为真时克隆跟随指针，原件留在原地；否则直接移动原件。`BringToFront` 把跟随物放到拖拽层最后。
 
 移动：跟随指针，并用射线、矩形、吸附范围（像素，矩形外到边缘的距离）检测同组放置点，派发进入/离开。悬停不要求 `CanAccept`，松开才要求。
 
@@ -44,6 +44,12 @@ controller.DragSucceeded += args => { };
 `DragSettings`（ScriptableObject，菜单 CommonGameFramework/Drag Settings）配置吸附、克隆、置顶、成功换父、回源时长与缓动。`ReturnEase` 是 DOTween 的 `Ease`，默认 `OutQuad`。
 
 回调是 C# event：源上 `BeginDrag` / `Dragging` / `EndDrag` / `DragSucceeded` / `DragFailed`；放置点上 `Entered` / `Exited` / `DragSucceeded` / `DragFailed`；控制器上成功、失败、进入、离开。自定义指针可以调用 `DragSource.ProcessBeginDrag` / `ProcessDrag` / `ProcessEndDrag`，或 `DragController.HandleBeginDrag` / `HandleDrag` / `HandleEndDrag`。
+
+## 目录
+
+公开类型仍是 `DragSource`、`DragPlace`、`DragController`、`DragSettings`、`DragEventArgs`、`DragPointerBridge`，名字没有改。
+
+内部：`Dragging/CurrentDrag` 是当前这一次拖拽（原先的 `DragSession`）；`Dragging/DragHitTester` 做射线、矩形和吸附范围；`Visual/DragVisual` 管副本、跟随和回源；`Visual/DragCloneGuard` 在克隆时避免把副本登记成正式的源或放置点。不要再用 `Session` 做目录或类型名。
 
 ## 依赖
 
