@@ -21,7 +21,7 @@ C# 开括号与声明或关键字写在同一行，例如 `namespace CommonGameF
 | Achievement | `Achievement/SKILL.md` | 改成就或接平台 |
 | Pool | `Pool/SKILL.md` | 改对象池，或游戏层 Get / Release |
 | Res | `Res/SKILL.md` | 改资源加载，或替换 Addressables 后端 |
-| DragPlace | `Component/ui/DragPlace/SKILL.md` | 改拖拽源 / 放置点 / DragController，或游戏层接拖放。文件平铺在模块根，不为单文件建子文件夹 |
+| DragPlace | `Component/ui/DragPlace/SKILL.md` | 改拖拽源 / 放置点 / DragController，或游戏层接拖放。对外脚本在模块根，内部实现在 `Internal/`，不为单文件再拆小文件夹 |
 
 其余门面无独立 Skill，只走静态入口：
 

@@ -5,7 +5,7 @@ description: 使用或修改 CommonGameFramework DragPlace。接 DragSource / Dr
 
 # DragPlace
 
-命名空间 `CommonGameFramework.DragPlace`。文件全部平铺在 `Component/ui/DragPlace/`，不为单文件建子文件夹。不依赖游戏 Mid / UIWidget。框架依赖 DOTween 与 UniTask：失败回源用 DOTween（`DOMove` / `DOAnchorPos` / `DOScale` / `DOLocalRotate`、`Sequence`、`SetEase`、`Kill`），完成等待用 UniTask `await` DOTween 的 `AsyncWaitForCompletion()`。
+命名空间 `CommonGameFramework.DragPlace`。对外脚本放在 `Component/ui/DragPlace/` 根目录，内部实现放在 `Internal/`。不为单文件再拆无意义的小文件夹。命名空间不随目录变。不依赖游戏 Mid / UIWidget。框架依赖 DOTween 与 UniTask：失败回源用 DOTween（`DOMove` / `DOAnchorPos` / `DOScale` / `DOLocalRotate`、`Sequence`、`SetEase`、`Kill`），完成等待用 UniTask `await` DOTween 的 `AsyncWaitForCompletion()`。
 
 ## 入口
 
@@ -47,11 +47,11 @@ controller.DragSucceeded += args => { };
 
 ## 目录
 
-本模块文件平铺在模块根，不为单文件建子文件夹。命名空间仍是 `CommonGameFramework.DragPlace`，不随文件位置再拆。
+按「外部能用 / 外部不能用」分开放，不为单文件再拆无意义的小文件夹。命名空间仍是 `CommonGameFramework.DragPlace`。
 
-公开类型：`DragController`、`DragSource`、`DragPlace`、`DragSettings`、`DragEventArgs`、`DragPointerBridge`。
+对外脚本（模块根，游戏层会挂组件或订阅）：`DragController`、`DragSource`、`DragPlace`、`DragSettings`、`DragEventArgs`、`DragPointerBridge`。
 
-内部：`CurrentDrag` 是当前这一次拖拽（原先的 `DragSession`）；`DragHitTester` 做射线、矩形和吸附范围；`DragVisual` 管副本、跟随和回源；`DragCloneGuard` 在克隆时避免把副本登记成正式的源或放置点；`DragRegistry` 按 `groupId` 登记。不要再用 `Session` 做类型名。
+内部实现（`Internal/`）：`CurrentDrag` 是当前这一次拖拽（原先的 `DragSession`）；`DragHitTester` 做射线、矩形和吸附范围；`DragVisual` 管副本、跟随和回源；`DragCloneGuard` 在克隆时避免把副本登记成正式的源或放置点；`DragRegistry` 按 `groupId` 登记。不要再用 `Session` 做类型名。
 
 ## 依赖
 

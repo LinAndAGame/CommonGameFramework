@@ -103,7 +103,7 @@ _Avoid_: 框架层音效 enum；运行时 AddComponent AudioSource
 _Avoid_: 冷却里写死技能名 enum；Tracker 内部引用 Clock 具体类
 
 **DragController**:
-当前拖拽的控制器。`DragSource` / `DragPlace` 按 `groupId` 登记；负责副本跟随、命中、成功吸附与失败回源。未指定控制器时，运行时在 Canvas 下创建 `[DragPlace]`。失败回源用 DOTween，等待完成用 UniTask。框架依赖这两项插件。内部类型 `CurrentDrag` 表示这一次拖拽，不要用 Session 命名。文件平铺在 `Component/ui/DragPlace/`，不为单文件建子文件夹。
+当前拖拽的控制器。`DragSource` / `DragPlace` 按 `groupId` 登记；负责副本跟随、命中、成功吸附与失败回源。未指定控制器时，运行时在 Canvas 下创建 `[DragPlace]`。失败回源用 DOTween，等待完成用 UniTask。框架依赖这两项插件。内部类型 `CurrentDrag` 表示这一次拖拽，不要用 Session 命名。对外脚本在模块根，内部实现在 `Internal/`，不为单文件再拆小文件夹。
 _Avoid_: 游戏 Mid / UIWidget 中间层；手写回源插值；用 enum 预设业务槽位
 
 **DragSource / DragPlace**:
