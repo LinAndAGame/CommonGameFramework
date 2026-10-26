@@ -1,0 +1,50 @@
+---
+description: C# 代码风格。开括号、布尔、方法注释、局部函数、分支和静态方法。DragPlace 必须遵守；旧模块尚未全库重排。
+alwaysApply: true
+---
+
+# C# 代码风格
+
+写 CommonGameFramework 时遵守。来源是游戏工程 `CSharp*.mdc` 与用户规则。DragPlace 已按此写。仓库里部分旧模块仍是旧排版，改那些模块时不要顺手全库重排。
+
+## 必须
+
+- 开括号 `{` 与声明或关键字同一行（K&R）：`namespace CommonGameFramework.DragPlace {`、`public void Foo() {`、`if (x == true) {`、`else {`、`try {`。禁止 Allman（换行再写 `{`）。
+- `if` 里的布尔必须写 `== true` 或 `== false`。禁止 `if (flag)`、`if (!flag)`。
+- 每个方法（含 public / private / internal、构造）头部一行 `//` 说明功能。
+- 局部函数只能放在宿主方法体末尾，主流程在前；可以写在 `return` 之后。
+- 互斥业务用 `if / else if / else`，分支里写全逻辑。每个分支前一行业务注释。禁止中间 `return` 后再写同级业务分支。守卫性提前 `return` 可以，其后不要再接同级业务分支。
+- 静态方法只能写在 `static class` 里。实例类禁止任何 `static` 方法（含 private）。`[RuntimeInitializeOnLoadMethod]` 也放到 static class。
+- 纯静态帮助类以 `Helper` 结尾，例如 `DragControllerHelper`、`DragSettingsHelper`。不要用 `Lookup`、`Runtime` 给这类类命名。
+- `abstract class` 名以 `Base` 开头。
+- 只读集合对外用 `IReadOnlyList<T>`，禁止在 getter 里 `.ToList()` 做防御拷贝。
+- `GetComponent` / `Find` 只在初始化时缓存。注释用中文。
+
+## 可以保留
+
+- 单行表达式体 `=>`。
+- 引用比较（`!= null`）和数值比较。这些不是布尔隐式真假。
+
+## 禁止
+
+```csharp
+// ❌ Allman，以及隐式布尔
+public void Foo()
+{
+    if (flag) {
+        return;
+    }
+    if (other) {
+        Run();
+    }
+}
+
+// ✅
+public void Foo() {
+    if (flag == false) {
+        return;
+    }
+
+    Run();
+}
+```

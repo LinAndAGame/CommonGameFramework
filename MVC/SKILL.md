@@ -18,7 +18,7 @@ var scope = new MvcScope();
 scope.RegisterModel(hpModel);
 scope.RegisterController(new HpController(hpModel, hpPanel));
 scope.Initialize();
-// 会话结束
+// 作用域退出
 scope.Dispose();
 ```
 

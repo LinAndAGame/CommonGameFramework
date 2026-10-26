@@ -5,6 +5,12 @@
 改了模块的公开入口、扩展点或禁止事项：先改该目录 `SKILL.md`，再改调用方。
 契约与代码冲突时以代码为准，并立刻改契约。
 
+框架依赖 DOTween 与 UniTask。DragPlace 的失败回源用 DOTween，等待完成用 UniTask。
+
+命名优先用业务能直接读懂的词（当前拖拽、放置点、回源、吸附等）。禁止用 `Session` / `session` 表示临时运行时状态。纯静态帮助类以 `Helper` 结尾。类型、目录、字段、注释都遵守。
+
+C# 风格见 `.cursor/rules/csharp-style.mdc`。开括号与声明同一行，禁止 Allman。布尔写成 `== true` / `== false`，禁止 `if (flag)` / `if (!flag)`。每个方法头部一行 `//`。局部函数放在宿主方法末尾。互斥业务用 `if / else if / else`，分支前写注释，禁止中间 `return` 后再写同级业务分支。静态方法只能在 `static class`。`abstract class` 以 `Base` 开头。DragPlace 已按此写；旧模块不要顺手全库重排。
+
 | 模块 | 契约 | 何时打开 |
 |------|------|----------|
 | Command | `Command/SKILL.md` | 改 CommandContext / IGameCommand，或游戏层写 Logic Command |
@@ -15,6 +21,7 @@
 | Achievement | `Achievement/SKILL.md` | 改成就或接平台 |
 | Pool | `Pool/SKILL.md` | 改对象池，或游戏层 Get / Release |
 | Res | `Res/SKILL.md` | 改资源加载，或替换 Addressables 后端 |
+| DragPlace | `Component/ui/DragPlace/SKILL.md` | 改拖拽源 / 放置点 / DragController，或游戏层接拖放。对外脚本在模块根，内部实现在 `Internal/`，不为单文件再拆小文件夹 |
 
 其余门面无独立 Skill，只走静态入口：
 

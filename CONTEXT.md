@@ -1,8 +1,10 @@
 # CommonGameFramework
 
-通用 Unity 游戏框架库：提供对象池、资源加载、逻辑 Command、Buff/Stat、时钟/随机/音频/冷却、视图流程等**机制**；卡牌战斗、UI 层级等**语义**由游戏项目扩展。存档用游戏层 EasySave，文案用 Unity Localization；Event 总线暂缓。
+通用 Unity 游戏框架库：提供对象池、资源加载、逻辑 Command、Buff/Stat、时钟/随机/音频/冷却、视图流程、UI 拖放等**机制**；卡牌战斗、UI 层级等**语义**由游戏项目扩展。存档用游戏层 EasySave，文案用 Unity Localization；Event 总线暂缓。
 
 ## Language
+
+命名优先用业务能直接读懂的词（当前拖拽、放置点、回源、吸附等）。禁止用 Session/session 表示临时运行时状态。类型、目录、字段、注释都遵守。
 
 **Logic Command**:
 同步执行的逻辑动作，通过 `IGameCommand` 修改权威游戏状态。
@@ -99,6 +101,14 @@ _Avoid_: 框架层音效 enum；运行时 AddComponent AudioSource
 **CooldownTracker**:
 多冷却管理；`CooldownId` 基类 + `CooldownTimer`；Tick 传入 `Clock.DeltaTime`。
 _Avoid_: 冷却里写死技能名 enum；Tracker 内部引用 Clock 具体类
+
+**DragController**:
+当前拖拽的控制器。`DragSource` / `DragPlace` 按 `groupId` 登记；负责副本跟随、命中、成功吸附与失败回源。未指定控制器时，运行时在 Canvas 下创建 `[DragPlace]`。失败回源用 DOTween，等待完成用 UniTask。框架依赖这两项插件。内部类型 `CurrentDrag` 表示这一次拖拽，不要用 Session 命名。对外脚本在模块根，内部实现在 `Internal/`，不为单文件再拆小文件夹。
+_Avoid_: 游戏 Mid / UIWidget 中间层；手写回源插值；用 enum 预设业务槽位
+
+**DragSource / DragPlace**:
+拖拽源与放置点。回调是 C# event。只有相同 `groupId`（含空字符串默认组）才能配对。`IDragClone` 自定义拖拽副本；未实现则 `Instantiate` 原件。
+_Avoid_: 在拖拽回调里改战斗权威状态；为了能拖而给业务物体运行时拼 UI
 
 **Extensions**:
 `Extensions/System`（C#）、`Extensions/Unity`（Unity API）；每扩展类一文件；命名空间 `CommonGameFramework.Extensions`。

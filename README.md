@@ -17,6 +17,7 @@
 | `Stat` | 属性聚合 | `Core/`；`Float/`；`Int/`；`Bool/` |
 | `Achievement` | 本地权威 + 可选平台 | 根 `AchievementService`；`Core/`；`Local/`；`Platform/` |
 | `View` | BaseView 异步 Open/Hide | 根 `ViewFlowController`；`Core/`；`Stack/`；`Canvas/` |
+| `DragPlace` | UI 拖放；`groupId` 配对源和放置点 | 对外脚本在 `Component/ui/DragPlace/` 根；内部实现在 `Internal/` |
 | `MVC` | 模型快照、视图刷新、控制器生命周期 | 根 `MvcScope`；`Model/`；`View/`；`Controller/` |
 | `StateMachine` | 通用 FSM | 扁平 |
 | `Style` | 样式切换 | 扁平 |
@@ -58,6 +59,26 @@ canvasRoot.RegisterCanvas(MainViewLayer.Instance, mainCanvas);
 ```
 
 `ViewFlowController`：`OpenAsync` 按 Push/Replace 入栈；`HideAsync` 出栈（栈顶 Pop，非栈顶从栈移除），若关闭的是栈顶则恢复下层 `OnDisplay`。日常只用这两个 API。
+
+## DragPlace
+
+命名空间 `CommonGameFramework.DragPlace`。不依赖游戏 UI 中间层。框架依赖 DOTween 与 UniTask：失败回源用 DOTween（`Ease` 默认 `OutQuad`），等待完成用 UniTask。
+
+`DragSource` 与 `DragPlace` 写上相同的 `groupId` 就会配对（留空则同属默认组）。它们在启用时登记到 `DragController`。找不到已有控制器时，运行时在所属 Canvas 下创建 `[DragPlace]`。
+
+```csharp
+source.SetGroupId("hand");
+source.SetUserData(card);
+source.DragSucceeded += args => { /* 玩法数据在游戏逻辑里改 */ };
+
+place.SetGroupId("hand");
+place.SetCanAccept(incoming => incoming.UserData != null);
+
+controller.Settings = dragSettings; // 空则用默认吸附范围 80、回源 0.25 秒
+controller.SetCanPlaceHandler((incoming, target) => true);
+```
+
+源物体（或其子节点）需要能被射线打中的 `Graphic`。子节点自己吃掉拖拽事件时，加 `DragPointerBridge` 指向 `DragSource`。配置资产菜单：`CommonGameFramework/Drag Settings`。`CreateFakeOnDrag` 为真时，源或原件上的 `IDragClone` 负责创建副本；没有该组件则按原件 `Instantiate`。
 
 ## Res / Pool Adapter
 
@@ -181,5 +202,8 @@ achievements.Save();
 
 ## 依赖
 
-- UniTask
+框架必要插件：DOTween 与 UniTask。
+
+- UniTask（程序集名 `UniTask`）
+- DOTween：预编译 `DOTween.dll`，以及模块程序集 `DOTween.Modules`（Utility Panel 生成 ASMDEF 后保持该程序集名）。`DOMove`、`DOAnchorPos`、`AsyncWaitForCompletion` 在模块程序集里
 - Odin Inspector Attributes（预编译 DLL）
