@@ -33,7 +33,7 @@ controller.DragSucceeded += args => { };
 
 ## 一次拖拽
 
-`DragController` 只记当前这一次拖拽。开始：记录原点。`CreateFakeOnDrag` 为真时克隆跟随指针，原件留在原地；否则直接移动原件。`BringToFront` 把跟随物放到拖拽层最后。
+`DragController` 只记当前这一次拖拽。开始：记录原点。`CreateFakeOnDrag` 为真时克隆跟随指针，原件留在原地；否则直接移动原件。源或原件上有 `IDragClone` 时用接口创建副本，没有则 `Object.Instantiate`。`BringToFront` 把跟随物放到拖拽层最后。
 
 移动：跟随指针，并用射线、矩形、吸附范围（像素，矩形外到边缘的距离）检测同组放置点，派发进入/离开。悬停不要求 `CanAccept`，松开才要求。
 
@@ -43,13 +43,15 @@ controller.DragSucceeded += args => { };
 
 `DragSettings`（ScriptableObject，菜单 CommonGameFramework/Drag Settings）配置吸附、克隆、置顶、成功换父、回源时长与缓动。`ReturnEase` 是 DOTween 的 `Ease`，默认 `OutQuad`。
 
+`IDragClone` 是对外扩展点，用来替换「拖拽时如何复制跟随物」。`CreateFakeOnDrag` 为真时：拖拽源上有该组件就用它；没有再看被拖原件（`DragTarget`，且与源不是同一个物体）。都没有则 `Object.Instantiate(原件, 拖拽层, true)`。接口方法是 `GameObject CreateClone(DragCloneContext context)`，上下文里有 `Source`、`Origin`、`DragLayer`。创建过程仍包在 `DragCloneGuard` 里，避免副本上的源、放置点、控制器登记。返回的对象若还没挂到拖拽层，框架会再 `SetParent`；随后命名为 `原件名_DragFake`、关掉交互、对齐位置旋转和世界缩放。返回 `null` 或原件自身时，这一次不建副本。
+
 回调是 C# event：源上 `BeginDrag` / `Dragging` / `EndDrag` / `DragSucceeded` / `DragFailed`；放置点上 `Entered` / `Exited` / `DragSucceeded` / `DragFailed`；控制器上成功、失败、进入、离开。自定义指针可以调用 `DragSource.ProcessBeginDrag` / `ProcessDrag` / `ProcessEndDrag`，或 `DragController.HandleBeginDrag` / `HandleDrag` / `HandleEndDrag`。
 
 ## 目录
 
 按「外部能用 / 外部不能用」分开放，不为单文件再拆无意义的小文件夹。命名空间仍是 `CommonGameFramework.DragPlace`。
 
-对外脚本（模块根，游戏层会挂组件或订阅）：`DragController`、`DragSource`、`DragPlace`、`DragSettings`、`DragEventArgs`、`DragPointerBridge`。
+对外脚本（模块根，游戏层会挂组件或订阅）：`DragController`、`DragSource`、`DragPlace`、`DragSettings`、`DragEventArgs`、`DragPointerBridge`、`IDragClone`、`DragCloneContext`。
 
 内部实现（`Internal/`）：`CurrentDrag` 是当前这一次拖拽（原先的 `DragSession`）；`DragHitTester` 做射线、矩形和吸附范围；`DragVisual` 管副本、跟随和回源；`DragCloneGuard` 在克隆时避免把副本登记成正式的源或放置点；`DragRegistry` 按 `groupId` 登记；`DragControllerLookup` 查找或创建控制器；`DragSettingsRuntime` 在配置为空时给出默认值。不要再用 `Session` 做类型名。
 

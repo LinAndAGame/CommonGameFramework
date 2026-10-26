@@ -107,7 +107,7 @@ _Avoid_: 冷却里写死技能名 enum；Tracker 内部引用 Clock 具体类
 _Avoid_: 游戏 Mid / UIWidget 中间层；手写回源插值；用 enum 预设业务槽位
 
 **DragSource / DragPlace**:
-拖拽源与放置点。回调是 C# event。只有相同 `groupId`（含空字符串默认组）才能配对。
+拖拽源与放置点。回调是 C# event。只有相同 `groupId`（含空字符串默认组）才能配对。`IDragClone` 自定义拖拽副本；未实现则 `Instantiate` 原件。
 _Avoid_: 在拖拽回调里改战斗权威状态；为了能拖而给业务物体运行时拼 UI
 
 **Extensions**:

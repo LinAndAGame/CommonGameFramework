@@ -308,13 +308,14 @@ namespace CommonGameFramework.DragPlace {
                 return;
             }
 
-            DragCloneGuard.Enter();
-            GameObject fakeGo;
-            try {
-                fakeGo = Object.Instantiate(origin.gameObject, dragLayer, true);
+            GameObject fakeGo = CreateCloneObject(source, origin, dragLayer);
+            if (fakeGo == null || fakeGo == origin.gameObject) {
+                return;
             }
-            finally {
-                DragCloneGuard.Exit();
+
+            if (fakeGo.transform.parent != dragLayer) {
+                // 接口没挂到拖拽层时，这里补上，世界坐标保持不变。
+                fakeGo.transform.SetParent(dragLayer, true);
             }
 
             fakeGo.name = origin.name + "_DragFake";
@@ -330,6 +331,45 @@ namespace CommonGameFramework.DragPlace {
             if (bringToFront == true) {
                 fakeGo.transform.SetAsLastSibling();
             }
+        }
+
+        // 有 IDragClone 时用接口创建，否则 Instantiate。整个创建包在 DragCloneGuard 里。
+        GameObject CreateCloneObject(DragSource source, RectTransform origin, RectTransform dragLayer) {
+            DragCloneGuard.Enter();
+            GameObject created = null;
+            try {
+                IDragClone creator = FindCloneCreator(source, origin);
+                if (creator != null) {
+                    // 拖拽源或原件上有自定义复制。
+                    created = creator.CreateClone(new DragCloneContext(source, origin, dragLayer));
+                }
+                else {
+                    // 没有接口时按原件单纯复制。
+                    created = Object.Instantiate(origin.gameObject, dragLayer, true);
+                }
+            }
+            finally {
+                DragCloneGuard.Exit();
+            }
+
+            return created;
+        }
+
+        // 先看拖拽源，再看被拖原件。父节点上的接口不参与。
+        IDragClone FindCloneCreator(DragSource source, RectTransform origin) {
+            IDragClone creator = null;
+            if (source != null) {
+                // 源物体上的组件优先。
+                creator = source.GetComponent<IDragClone>();
+            }
+
+            bool sameObject = source != null && origin != null && origin.gameObject == source.gameObject;
+            if (creator == null && origin != null && sameObject == false) {
+                // 源上没有时再看被拖的原件。
+                creator = origin.GetComponent<IDragClone>();
+            }
+
+            return creator;
         }
 
         // 让副本的世界缩放和原件一致。

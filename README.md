@@ -78,7 +78,7 @@ controller.Settings = dragSettings; // 空则用默认吸附范围 80、回源 0
 controller.SetCanPlaceHandler((incoming, target) => true);
 ```
 
-源物体（或其子节点）需要能被射线打中的 `Graphic`。子节点自己吃掉拖拽事件时，加 `DragPointerBridge` 指向 `DragSource`。配置资产菜单：`CommonGameFramework/Drag Settings`。
+源物体（或其子节点）需要能被射线打中的 `Graphic`。子节点自己吃掉拖拽事件时，加 `DragPointerBridge` 指向 `DragSource`。配置资产菜单：`CommonGameFramework/Drag Settings`。`CreateFakeOnDrag` 为真时，源或原件上的 `IDragClone` 负责创建副本；没有该组件则按原件 `Instantiate`。
 
 ## Res / Pool Adapter
 
