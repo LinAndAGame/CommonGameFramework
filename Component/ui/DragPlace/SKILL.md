@@ -57,6 +57,10 @@ controller.DragSucceeded += args => { };
 
 框架依赖 DOTween 与 UniTask。`CommonGameFramework.asmdef` 引用程序集 `UniTask`、`DOTween.Modules`，并预编译引用 `DOTween.dll`。`Tween` / `Ease` / `DOTween.Sequence` 在 `DOTween.dll`；`DOMove`、`DOAnchorPos`、`DOScale`、`DOLocalRotate`、`AsyncWaitForCompletion` 在 `DOTween.Modules`。用 DOTween Utility Panel 生成 ASMDEF 后，程序集名必须保持 `DOTween.Modules`。
 
+## 风格
+
+C# 开括号与声明或关键字同一行：`namespace CommonGameFramework.DragPlace {`、`public void Foo() {`、`if (x) {`、`else {`、`try {`。禁止 Allman（换行再写 `{`）。单行可以继续用 `=>`，或极短 `if (x) return;`。
+
 ## 禁止
 
 - 依赖 `UIWidget`、`WidgetType`、游戏 `UIEvent` / `Language.Config`

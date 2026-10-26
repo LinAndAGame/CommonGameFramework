@@ -4,15 +4,13 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
-namespace CommonGameFramework.DragPlace
-{
+namespace CommonGameFramework.DragPlace {
     /// <summary>
     /// 拖拽源。挂在已有 UI 上，按 groupId 向 DragController 注册，不要求游戏中间层。
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RectTransform))]
-    public sealed class DragSource : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler
-    {
+    public sealed class DragSource : MonoBehaviour, IBeginDragHandler, IDragHandler, IEndDragHandler {
         [FoldoutGroup("拖拽")]
         [LabelText("允许拖拽")]
         [SerializeField]
@@ -40,8 +38,7 @@ namespace CommonGameFramework.DragPlace
         bool _warnedNoController;
 
         /// <summary>是否允许开始拖拽。</summary>
-        public bool EnableDrag
-        {
+        public bool EnableDrag {
             get => _enableDrag;
             set => _enableDrag = value;
         }
@@ -66,12 +63,9 @@ namespace CommonGameFramework.DragPlace
         public event Action<DragEventArgs> DragFailed;
 
         /// <summary>跟随指针的矩形。未指定时用自身。</summary>
-        public RectTransform DragTarget
-        {
-            get
-            {
-                if (_dragTarget != null)
-                {
+        public RectTransform DragTarget {
+            get {
+                if (_dragTarget != null) {
                     return _dragTarget;
                 }
 
@@ -80,33 +74,27 @@ namespace CommonGameFramework.DragPlace
         }
 
         // 写入业务数据。
-        public void SetUserData(object data)
-        {
+        public void SetUserData(object data) {
             UserData = data;
         }
 
         // 修改组 ID，已登记时同步到控制器。
-        public void SetGroupId(string groupId)
-        {
+        public void SetGroupId(string groupId) {
             _groupId = groupId ?? string.Empty;
-            if (_owner != null)
-            {
+            if (_owner != null) {
                 _owner.RefreshSourceGroup(this);
             }
         }
 
         // 指定被拖动的矩形。传 null 则回到自身。
-        public void SetDragTarget(RectTransform target)
-        {
+        public void SetDragTarget(RectTransform target) {
             _dragTarget = target;
         }
 
         // 指定控制器。传 null 则重新自动查找。
-        public void SetController(DragController controller)
-        {
+        public void SetController(DragController controller) {
             _assignedController = controller;
-            if (Application.isPlaying == false || isActiveAndEnabled == false)
-            {
+            if (Application.isPlaying == false || isActiveAndEnabled == false) {
                 return;
             }
 
@@ -114,15 +102,12 @@ namespace CommonGameFramework.DragPlace
         }
 
         // 由 EventSystem 或外部指针开始拖拽。
-        public void ProcessBeginDrag(PointerEventData eventData)
-        {
-            if (_owner == null)
-            {
+        public void ProcessBeginDrag(PointerEventData eventData) {
+            if (_owner == null) {
                 Rebind();
             }
 
-            if (_owner == null)
-            {
+            if (_owner == null) {
                 WarnNoController();
                 return;
             }
@@ -131,10 +116,8 @@ namespace CommonGameFramework.DragPlace
         }
 
         // 拖拽移动。
-        public void ProcessDrag(PointerEventData eventData)
-        {
-            if (_owner == null)
-            {
+        public void ProcessDrag(PointerEventData eventData) {
+            if (_owner == null) {
                 return;
             }
 
@@ -142,10 +125,8 @@ namespace CommonGameFramework.DragPlace
         }
 
         // 结束拖拽。
-        public void ProcessEndDrag(PointerEventData eventData)
-        {
-            if (_owner == null)
-            {
+        public void ProcessEndDrag(PointerEventData eventData) {
+            if (_owner == null) {
                 return;
             }
 
@@ -153,45 +134,37 @@ namespace CommonGameFramework.DragPlace
         }
 
         // EventSystem 按下并拖动。
-        public void OnBeginDrag(PointerEventData eventData)
-        {
+        public void OnBeginDrag(PointerEventData eventData) {
             ProcessBeginDrag(eventData);
         }
 
         // EventSystem 拖动中。
-        public void OnDrag(PointerEventData eventData)
-        {
+        public void OnDrag(PointerEventData eventData) {
             ProcessDrag(eventData);
         }
 
         // EventSystem 松开。
-        public void OnEndDrag(PointerEventData eventData)
-        {
+        public void OnEndDrag(PointerEventData eventData) {
             ProcessEndDrag(eventData);
         }
 
         // 副本上的源不再向控制器登记。
-        internal void MarkAsClone()
-        {
+        internal void MarkAsClone() {
             _isClone = true;
         }
 
         // 拖拽改父节点期间不要因为 OnTransformParentChanged 重新登记。
-        internal void SetDragLocked(bool locked)
-        {
+        internal void SetDragLocked(bool locked) {
             _dragLocked = locked;
         }
 
         // 这一次拖拽结束后按当前位置重新查找控制器。
-        internal void RebindIfPlaying()
-        {
-            if (_isClone == true || _dragLocked == true)
-            {
+        internal void RebindIfPlaying() {
+            if (_isClone == true || _dragLocked == true) {
                 return;
             }
 
-            if (Application.isPlaying == false || isActiveAndEnabled == false)
-            {
+            if (Application.isPlaying == false || isActiveAndEnabled == false) {
                 return;
             }
 
@@ -199,81 +172,65 @@ namespace CommonGameFramework.DragPlace
         }
 
         // 绑到控制器。
-        internal void Attach(DragController owner)
-        {
+        internal void Attach(DragController owner) {
             _owner = owner;
         }
 
         // 从控制器解开。
-        internal void Detach(DragController owner)
-        {
-            if (_owner == owner)
-            {
+        internal void Detach(DragController owner) {
+            if (_owner == owner) {
                 _owner = null;
             }
         }
 
         // 控制器改组时写回字段，避免再次触发登记。
-        internal void ApplyGroupId(string groupId)
-        {
+        internal void ApplyGroupId(string groupId) {
             _groupId = groupId ?? string.Empty;
         }
 
         // 派发开始拖拽。
-        internal void RaiseBeginDrag(PointerEventData eventData)
-        {
+        internal void RaiseBeginDrag(PointerEventData eventData) {
             Action<PointerEventData> handler = BeginDrag;
-            if (handler != null)
-            {
+            if (handler != null) {
                 handler.Invoke(eventData);
             }
         }
 
         // 派发拖拽移动。
-        internal void RaiseDragging(PointerEventData eventData)
-        {
+        internal void RaiseDragging(PointerEventData eventData) {
             Action<PointerEventData> handler = Dragging;
-            if (handler != null)
-            {
+            if (handler != null) {
                 handler.Invoke(eventData);
             }
         }
 
         // 派发结束拖拽。
-        internal void RaiseEndDrag(PointerEventData eventData)
-        {
+        internal void RaiseEndDrag(PointerEventData eventData) {
             Action<PointerEventData> handler = EndDrag;
-            if (handler != null)
-            {
+            if (handler != null) {
                 handler.Invoke(eventData);
             }
         }
 
         // 派发拖拽成功。
-        internal void RaiseSucceeded(DragEventArgs args)
-        {
+        internal void RaiseSucceeded(DragEventArgs args) {
             Action<DragEventArgs> handler = DragSucceeded;
-            if (handler != null)
-            {
+            if (handler != null) {
                 handler.Invoke(args);
             }
         }
 
         // 派发拖拽失败。
-        internal void RaiseFailed(DragEventArgs args)
-        {
+        internal void RaiseFailed(DragEventArgs args) {
             Action<DragEventArgs> handler = DragFailed;
-            if (handler != null)
-            {
+            if (handler != null) {
                 handler.Invoke(args);
             }
         }
 
         // 启用时向控制器登记。
-        void OnEnable()
-        {
-            if (_isClone == true || DragCloneGuard.IsCloning == true || Application.isPlaying == false)
-            {
+        void OnEnable() {
+            if (_isClone == true || DragCloneGuard.IsCloning == true || Application.isPlaying == false) {
                 return;
             }
 
@@ -282,29 +239,23 @@ namespace CommonGameFramework.DragPlace
         }
 
         // 禁用时解除登记。
-        void OnDisable()
-        {
-            if (_isClone == true || DragCloneGuard.IsCloning == true)
-            {
+        void OnDisable() {
+            if (_isClone == true || DragCloneGuard.IsCloning == true) {
                 return;
             }
 
-            if (_owner != null)
-            {
+            if (_owner != null) {
                 _owner.UnregisterSource(this);
             }
         }
 
         // 换父节点后，若不是正在拖拽改父，重新查找控制器。
-        void OnTransformParentChanged()
-        {
-            if (_isClone == true || _dragLocked == true || DragCloneGuard.IsCloning == true)
-            {
+        void OnTransformParentChanged() {
+            if (_isClone == true || _dragLocked == true || DragCloneGuard.IsCloning == true) {
                 return;
             }
 
-            if (Application.isPlaying == false || isActiveAndEnabled == false)
-            {
+            if (Application.isPlaying == false || isActiveAndEnabled == false) {
                 return;
             }
 
@@ -313,36 +264,29 @@ namespace CommonGameFramework.DragPlace
 
 #if UNITY_EDITOR
         // 运行中在 Inspector 改组 ID 时同步登记。
-        void OnValidate()
-        {
-            if (Application.isPlaying == true && _owner != null && _dragLocked == false)
-            {
+        void OnValidate() {
+            if (Application.isPlaying == true && _owner != null && _dragLocked == false) {
                 _owner.RefreshSourceGroup(this);
             }
         }
 #endif
 
         // 按指定控制器、父节点或 Canvas 重新登记。
-        void Rebind()
-        {
+        void Rebind() {
             DragController next = DragController.Resolve(this, _assignedController);
-            if (next == _owner)
-            {
-                if (next != null)
-                {
+            if (next == _owner) {
+                if (next != null) {
                     next.RefreshSourceGroup(this);
                 }
 
                 return;
             }
 
-            if (_owner != null)
-            {
+            if (_owner != null) {
                 _owner.UnregisterSource(this);
             }
 
-            if (next == null)
-            {
+            if (next == null) {
                 WarnNoController();
                 return;
             }
@@ -351,20 +295,16 @@ namespace CommonGameFramework.DragPlace
         }
 
         // 没有 Graphic 时射线打不中这个源。
-        void WarnIfNoGraphic()
-        {
-            if (_warnedGraphic == true)
-            {
+        void WarnIfNoGraphic() {
+            if (_warnedGraphic == true) {
                 return;
             }
 
-            if (GetComponent<Graphic>() != null)
-            {
+            if (GetComponent<Graphic>() != null) {
                 return;
             }
 
-            if (GetComponentInChildren<Graphic>(true) != null)
-            {
+            if (GetComponentInChildren<Graphic>(true) != null) {
                 return;
             }
 
@@ -373,10 +313,8 @@ namespace CommonGameFramework.DragPlace
         }
 
         // 找不到控制器时提示一次。
-        void WarnNoController()
-        {
-            if (_warnedNoController == true)
-            {
+        void WarnNoController() {
+            if (_warnedNoController == true) {
                 return;
             }
 

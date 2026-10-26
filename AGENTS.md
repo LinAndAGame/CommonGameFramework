@@ -9,6 +9,8 @@
 
 命名优先用业务能直接读懂的词（当前拖拽、放置点、回源、吸附等）。禁止用 `Session` / `session` 表示临时运行时状态。类型、目录、字段、注释都遵守。
 
+C# 开括号与声明或关键字写在同一行，例如 `namespace CommonGameFramework.DragPlace {`、`if (x) {`、`else {`。禁止 Allman（换行再写 `{`）。单行表达式体 `=>` 和极短 `if (x) return;` 可以保留。DragPlace 已按此排版；仓库里部分旧模块仍是 Allman，改那些模块时不要顺手全库重排。
+
 | 模块 | 契约 | 何时打开 |
 |------|------|----------|
 | Command | `Command/SKILL.md` | 改 CommandContext / IGameCommand，或游戏层写 Logic Command |

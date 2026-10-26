@@ -2,15 +2,13 @@ using DG.Tweening;
 using Sirenix.OdinInspector;
 using UnityEngine;
 
-namespace CommonGameFramework.DragPlace
-{
+namespace CommonGameFramework.DragPlace {
     /// <summary>
     /// 拖放配置。未赋值时使用字段默认值（运行时一份隐藏实例）。
     /// 回源缓动使用 DOTween 的 Ease。框架依赖 DOTween 与 UniTask。
     /// </summary>
     [CreateAssetMenu(fileName = "DragSettings", menuName = "CommonGameFramework/Drag Settings")]
-    public sealed class DragSettings : ScriptableObject
-    {
+    public sealed class DragSettings : ScriptableObject {
         static DragSettings _runtimeDefault;
 
         [FoldoutGroup("吸附")]
@@ -66,22 +64,17 @@ namespace CommonGameFramework.DragPlace
         public Ease ReturnEase => _returnEase;
 
         /// <summary>settings 为空时返回带默认值的运行时实例。</summary>
-        public static DragSettings Resolve(DragSettings settings)
-        {
-            if (settings != null)
-            {
+        public static DragSettings Resolve(DragSettings settings) {
+            if (settings != null) {
                 return settings;
             }
 
             return RuntimeDefault;
         }
 
-        static DragSettings RuntimeDefault
-        {
-            get
-            {
-                if (_runtimeDefault != null)
-                {
+        static DragSettings RuntimeDefault {
+            get {
+                if (_runtimeDefault != null) {
                     return _runtimeDefault;
                 }
 
@@ -93,8 +86,7 @@ namespace CommonGameFramework.DragPlace
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetRuntimeDefault()
-        {
+        static void ResetRuntimeDefault() {
             _runtimeDefault = null;
         }
     }
